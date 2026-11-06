@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Frogger: Science Highway</title>
+<!-- GOOGLE SHEETS LOGGING: create a Sheet > Extensions > Apps Script, paste:
+function doPost(e){var d=JSON.parse(e.postData.contents),s=SpreadsheetApp.getActiveSheet();
+if(s.getLastRow()==0)s.appendRow(Object.keys(d));s.appendRow(Object.values(d));return ContentService.createTextOutput('ok')}
+Deploy > Web app > Anyone, then paste the /exec URL into CFG.SHEETS_URL below. -->
+<style>
+:root{--ink:#16324a;--lime:#7ed957;--sun:#ffd23f;--sea:#2d9cdb;--pink:#ff5d8f}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;min-height:100%;font-family:"Trebuchet MS","Segoe UI",system-ui,sans-serif;color:var(--ink);background:linear-gradient(#9fe0ff,#e8fbff)}
+#app,#app *,.ov,.ov *{user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
+textarea,input,select{user-select:text;-webkit-user-select:text;font:inherit}
+#app{display:flex;flex-direction:column;align-items:center;gap:8px;padding:8px}
+#hud{display:flex;justify-content:space-between;align-items:center;width:min(96vw,calc(100dvh - 190px),600px);min-width:300px;background:#fff;border:3px solid var(--ink);border-radius:16px;padding:4px 12px;font-weight:800;box-shadow:0 4px 0 var(--ink)}
+#hud svg{width:24px;height:24px;vertical-align:middle;margin:0 1px}
+.st svg{color:#c9d6e0}.st svg.on{color:var(--sun);filter:drop-shadow(0 0 3px #ffb300)}
+canvas{width:min(96vw,calc(100dvh - 190px),600px);min-width:300px;aspect-ratio:1;border:4px solid var(--ink);border-radius:18px;box-shadow:0 6px 0 var(--ink);touch-action:none;background:#5fd068}
+#dpad{display:grid;grid-template:repeat(2,58px)/repeat(3,58px);gap:6px;justify-content:center}
+#dpad button{background:var(--sun);border:3px solid var(--ink);border-radius:14px;box-shadow:0 4px 0 var(--ink);color:var(--ink);padding:6px;touch-action:none}
+#dpad button:active{transform:translateY(3px);box-shadow:0 1px 0 var(--ink)}
+#dpad svg{width:100%;height:100%}
+@media (hover:hover) and (pointer:fine){#dpad{display:none}}
+.ov{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(15,40,70,.6);padding:12px;overflow:auto;z-index:10}
+.ov.on{display:flex}.ov.clear{background:none;align-items:flex-end;pointer-events:none}.ov.clear .card{pointer-events:auto}
+.card{background:#fff;border:4px solid var(--ink);border-radius:22px;padding:18px;max-width:580px;width:100%;box-shadow:0 8px 0 var(--ink);margin:auto}
+h1,h2{margin:0 0 8px;letter-spacing:-.5px}h1{font-size:28px}
+label{display:block;font-weight:700;margin:8px 0 3px;font-size:14px}
+input,select,textarea{width:100%;padding:9px 10px;border:3px solid var(--ink);border-radius:12px;background:#f6fcff;color:var(--ink)}
+.btn{display:inline-block;background:var(--lime);color:var(--ink);border:3px solid var(--ink);border-radius:14px;padding:10px 18px;font-weight:900;font-size:16px;box-shadow:0 4px 0 var(--ink);cursor:pointer;margin:8px 6px 0 0}
+.btn:active{transform:translateY(3px);box-shadow:0 1px 0 var(--ink)}.btn.alt{background:var(--sun)}.btn.no{background:#e8eef3}
+.row{display:flex;gap:10px}.row>*{flex:1}
+small{opacity:.75}
+#term .card{background:#0d2238;color:#d9f6ff;border-color:#37e6c3;box-shadow:0 8px 0 #0a1626,0 0 24px #37e6c366}
+#term h2{color:#37e6c3;display:flex;align-items:center;gap:8px}#term h2 svg{width:26px}
+#term textarea{background:#091829;color:#e8fbff;border-color:#37e6c3;min-height:96px}
+#qtext{font-size:18px;font-weight:700;margin:6px 0 10px;line-height:1.35}
+.opt{display:block;width:100%;text-align:left;margin:6px 0;background:#143555;color:#e8fbff;border:3px solid #37e6c3;border-radius:12px;padding:10px;font-weight:700;font-size:16px;cursor:pointer}
+.opt:active{background:#1f5a8a}
+.shake{animation:sh .5s}@keyframes sh{20%{transform:translateX(-14px) rotate(-1deg)}40%{transform:translateX(12px)}60%{transform:translateX(-9px)}80%{transform:translateX(6px)}}
+.chip{display:inline-block;padding:3px 10px;border-radius:99px;margin:3px 3px 0 0;font-size:13px;font-weight:800}.chip.ok{background:#37e6c3;color:#052}.chip.miss{background:#ff7a90;color:#400}
+.cmp{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px;font-size:14px}.cmp div{background:#091829;border-radius:10px;padding:8px}.cmp b{display:block;color:#37e6c3;margin-bottom:3px}
+#cert .card{max-width:760px;text-align:center;border-width:8px;border-color:#c99a1c;background:#fffbe8;box-shadow:none}
+#cert h1{font-size:34px;color:#8a5d00}#cert .nm{font-size:38px;font-weight:900;border-bottom:3px solid #c99a1c;display:inline-block;padding:0 24px;margin:10px 0}
+@media print{body *{visibility:hidden}#cert,#cert *{visibility:visible}#cert{position:fixed;inset:0;background:#fff}.np{display:none!important}}
+</style></head><body>
+<div id="app">
+ <div id="hud"><span id="hn"></span><span class="st" id="hs"></span><span id="hl"></span></div>
+ <canvas id="cv"></canvas>
+ <div id="dpad"><span></span><button data-d="0,-1" aria-label="Up"></button><span></span><button data-d="-1,0" aria-label="Left"></button><button data-d="0,1" aria-label="Down"></button><button data-d="1,0" aria-label="Right"></button></div>
+</div>
+
+<div class="ov" id="portal"><div class="card">
+ <h1>Teacher Portal</h1><small>Frogger: Science Highway. Pick settings for practice, or unlock link-making with your PIN.</small>
+ <div class="row"><div><label>Theme</label><select id="pth"><option value="meadow">Sunny Meadow</option><option value="sunset">Sunset Swamp</option><option value="night">Night Lab</option></select></div>
+ <div><label>Traffic speed</label><select id="psp"><option value="slow">Slow</option><option value="normal" selected>Normal</option><option value="fast">Fast</option></select></div></div>
+ <div class="row"><div><label>Student name</label><input id="pn" placeholder="e.g. Amina Hassan"></div><div><label>Class code</label><input id="pc" placeholder="e.g. 7B-SCI"></div></div>
+ <label>Teacher PIN</label><input id="pp" type="password" inputmode="numeric" placeholder="PIN">
+ <button class="btn alt" id="gen">Make student link</button><button class="btn" id="prac">Practice now</button>
+ <div id="out" style="display:none"><label>Signed student link</label><input id="lk" readonly><button class="btn no" id="cp">Copy link</button></div>
+ <small id="pm"></small>
+</div></div>
+
+<div class="ov" id="intro"><div class="card" style="text-align:center"><h1>Hop, dodge, then crack the Science Gate</h1>
+ <h2 id="hello"></h2><p>Cross the highway and the river. Answer the gate question to evolve into Super Science Frog. Arrow keys, WASD, swipe, or the pad.</p><button class="btn" id="go">Start hopping</button></div></div>
+<div class="ov" id="bad"><div class="card"><h1>Link not valid</h1><p>This student link was changed or is incomplete. Ask your teacher for a new link.</p></div></div>
+
+<div class="ov" id="term"><div class="card" id="tbox">
+ <h2><svg viewBox="0 0 24 24"><path d="M7 10V7a5 5 0 0 1 10 0v3h1.500a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1h-13a1 1 0 0 1-1-1v-9a1 1 0 0 1 1-1zm2 0h6V7a3 3 0 0 0-6 0z" fill="currentColor"/></svg>Secret Science Terminal</h2>
+ <div id="qtext"></div><div id="qin"></div><div id="fb"></div>
+</div></div>
+
+<div class="ov" id="over"><div class="card" style="text-align:center"><h1>Mission Failed - Try Again!</h1><p>All 3 lives are gone. The highway wins this round.</p><button class="btn" id="again">Try again</button></div></div>
+<div class="ov clear" id="win"><div class="card" style="text-align:center"><h1>Golden Science Lily Pad Kingdom!</h1><p id="wmsg"></p><button class="btn alt" id="mkc">Open certificate</button><button class="btn" id="again2">Play again</button></div></div>
+
+<div class="ov" id="cert"><div class="card">
+ <svg width="90" height="90" viewBox="0 0 24 24"><path d="M12 2l2.900 6 6.600.9-4.800 4.600 1.200 6.500L12 17l-5.900 3 1.200-6.500L2.500 8.900 9.100 8z" fill="#ffd23f" stroke="#c99a1c" stroke-width="1"/></svg>
+ <h1>Master Science Hopper Certificate</h1><p>This certificate proudly goes to</p><div class="nm" id="cn"></div>
+ <p>for crossing the Science Highway, unlocking every Secret Science Gate, and reaching the Golden Science Lily Pad Kingdom.</p><p id="cd"></p>
+ <button class="btn np" onclick="print()">Print</button><button class="btn no np" onclick="show('#win')">Close</button>
+</div></div>
+
+<script>
+const CFG={PIN:'1234',SHEETS_URL:''}; // Change PIN. Paste Apps Script /exec URL into SHEETS_URL.
+const $=s=>document.querySelector(s),COLS=11,ROWS=11,S=48,MAXL=3,GATES=3;
+const TH={meadow:{g:'#5fd068',g2:'#4cbd58',rd:'#4a4f5c',ln:'#fff3b0',w:'#2f9fe6',w2:'#7ccdf8',dk:0},
+ sunset:{g:'#9bd35f',g2:'#86c24f',rd:'#5d4a72',ln:'#ffd1a1',w:'#6f7cea',w2:'#b2baff',dk:.12},
+ night:{g:'#2e9a62',g2:'#26864f',rd:'#262a38',ln:'#9fb4d9',w:'#1e63b4',w2:'#4a92dd',dk:.35}};
+const SP={slow:.75,normal:1,fast:1.3};
+const IC={heart:'<svg viewBox="0 0 24 24"><path d="M12 21C5 15 2 11.500 2 8a5 5 0 0 1 10-1 5 5 0 0 1 10 1c0 3.500-3 7-10 13z" fill="#ff4d6d" stroke="#8a1c33" stroke-width="1.500"/></svg>',
+ hurt:'<svg viewBox="0 0 24 24"><path d="M12 21C5 15 2 11.500 2 8a5 5 0 0 1 10-1 5 5 0 0 1 10 1c0 3.500-3 7-10 13z" fill="#d5dfe8" stroke="#8aa0b3" stroke-width="1.500"/></svg>',
+ star:'<svg viewBox="0 0 24 24"><path d="M12 2l2.900 6 6.600.9-4.800 4.600 1.200 6.500L12 17l-5.900 3 1.200-6.500L2.500 8.900 9.100 8z" fill="currentColor" stroke="#16324a" stroke-width="1.200"/></svg>',
+ arr:'<svg viewBox="0 0 24 24"><path d="M12 5l8 11H4z" fill="currentColor"/></svg>'};
+document.querySelectorAll('#dpad button').forEach(b=>{const[d]=[b.dataset.d.split(',').map(Number)];b.innerHTML=IC.arr;b.firstChild.style.transform=`rotate(${d[1]<0?0:d[1]>0?180:d[0]>0?90:-90}deg)`;b.addEventListener('pointerdown',e=>{e.preventDefault();hop(...d)})});
+
+// ---------- helpers ----------
+const H=s=>{let a=0xdeadbeef,b=0x41c6ce57;for(let i=0;i<s.length;i++){const c=s.charCodeAt(i);a=Math.imul(a^c,2654435761);b=Math.imul(b^c,1597334677)}a=Math.imul(a^a>>>16,2246822507)^Math.imul(b^b>>>13,3266489909);b=Math.imul(b^b>>>16,2246822507)^Math.imul(a^a>>>13,3266489909);return(4294967296*(2097151&b)+(a>>>0)).toString(36)};
+const sign=(n,c,t,s)=>H([n,c,t,s,CFG.PIN].join('|'));
+function show(id){document.querySelectorAll('.ov').forEach(o=>o.classList.remove('on'));if(id)$(id).classList.add('on')}
+let AC;function tone(f,d,ty='square',at=0,v=.08){try{AC=AC||new(window.AudioContext||webkitAudioContext)();const t=AC.currentTime+at,o=AC.createOscillator(),g=AC.createGain();o.type=ty;o.frequency.value=f;g.gain.setValueAtTime(v,t);g.gain.exponentialRampToValueAtTime(.001,t+d);o.connect(g);g.connect(AC.destination);o.start(t);o.stop(t+d)}catch(e){}}
+const SFX={hop:()=>tone(520,.08,'sine'),die:()=>{tone(200,.25,'sawtooth');tone(110,.35,'sawtooth',.15)},bad:()=>{[300,250,300].forEach((f,i)=>tone(f,.15,'sine',i*.15,.1))},
+ win:()=>[523,659,784,1047,1319].forEach((f,i)=>tone(f,.28,'triangle',i*.1,.13)),pop:()=>tone(900+Math.random()*600,.1,'sine',0,.05)};
+let who={name:'',code:''},cfg={th:'meadow',sp:'normal'},G=null;
+function log(ev,x={}){const d={ts:new Date().toISOString(),student:who.name||'(teacher)',code:who.code,event:ev,stage:G?G.stage+1:0,lives:G?G.lives:0,theme:cfg.th,speed:cfg.sp,...x};
+ if(CFG.SHEETS_URL)try{fetch(CFG.SHEETS_URL,{method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(d),keepalive:true}).catch(()=>{})}catch(e){}}
+
+// ---------- questions: w=written (concept groups), mc, tf ----------
+const QB=[
+{t:'w',q:'Explain how photosynthesis helps a plant make its food.',m:'Plants use sunlight, water and carbon dioxide inside the chlorophyll in their leaves to make glucose (sugar) and release oxygen.',
+ c:[['sunlight energy','sun','light'],['water','water','h2o'],['carbon dioxide','carbon','co2'],['glucose / sugar','glucose','sugar','food'],['oxygen released','oxygen','o2'],['chlorophyll in leaves','chlorophyll','chloroplast','leaf','leaves']]},
+{t:'mc',q:'Which state of matter has a fixed volume but takes the shape of its container?',o:['Solid','Liquid','Gas','Plasma'],a:1},
+{t:'tf',q:'True or false: sound can travel through empty space (a vacuum).',a:false,m:'False. Sound needs particles to vibrate, so it cannot travel through a vacuum.'},
+{t:'w',q:'Describe the stages of the water cycle.',m:'Heat from the sun causes evaporation, the vapor cools into clouds by condensation, falls as precipitation (rain or snow), and collects in rivers, lakes and oceans.',
+ c:[['sun heat energy','sun','heat','energy'],['evaporation','evaporat'],['condensation / clouds','condens','cloud'],['precipitation','precipit','rain','snow'],['collection in rivers/oceans','collect','river','ocean','lake','sea','runoff']]},
+{t:'mc',q:'Which force pulls objects toward the center of the Earth?',o:['Friction','Magnetism','Gravity','Buoyancy'],a:2},
+{t:'w',q:'Why do we have day and night?',m:'The Earth rotates (spins) on its axis about every 24 hours, so the side facing the Sun has day and the side facing away has night.',
+ c:[['Earth rotates / spins','rotat','spin'],['on its axis','axis'],['facing the Sun','sun','face','facing','toward'],['24 hours','24','hour','full day'],['side away is dark','away','dark','night']]},
+{t:'tf',q:'True or false: all living things are made of cells.',a:true,m:'True. Cells are the basic units of all living things.'},
+{t:'w',q:'What is a food chain? Show how energy moves through one.',m:'A food chain shows how energy passes from the Sun to producers (plants), then to consumers (animals that eat them), and finally to decomposers.',
+ c:[['energy from the Sun','sun','energy'],['producers (plants)','producer','plant','grass'],['consumers eat','consumer','eat','herbivore','predator','animal'],['decomposers','decompos','fungi','bacteria'],['energy flows / passes','flow','pass','transfer','move']]}];
+function check(q,ans){const a=(ans||'').toLowerCase();
+ if(q.t==='mc')return{ok:+ans===q.a};if(q.t==='tf')return{ok:(ans==='true')===q.a};
+ const hit=[],miss=[];q.c.forEach(c=>(c.slice(1).some(k=>a.includes(k))?hit:miss).push(c[0]));
+ return{ok:a.trim().length>8&&hit.length>=Math.ceil(q.c.length*.6),hit,miss}}
+
+// ---------- game ----------
+const cv=$('#cv'),ctx=cv.getContext('2d');cv.width=COLS*S;cv.height=ROWS*S;let last=0,PA=[];
+function newGame(){const qs=[...QB].sort(()=>Math.random()-.5);
+ const w=qs.filter(q=>q.t==='w'),o=qs.filter(q=>q.t!=='w');G={lives:MAXL,stage:0,sup:false,st:'play',t:0,gate:0,cut:0,qs:[w[0],o[0],w[1]],f:null,tries:0};
+ lanes();respawn();show();hud();log('game_start')}
+function lanes(){const k=SP[cfg.sp]*(1+.12*G.stage);
+ G.L=[[6,1.5,'car'],[7,-2,'truck'],[8,2.2,'car'],[9,-1.7,'truck'],[1,-1.1,'log'],[2,1.4,'pad'],[3,-1.6,'log'],[4,1.2,'pad']].map(([r,v,kind],i)=>{
+  const w={car:1.3,truck:2.2,log:3,pad:1.2}[kind],n={car:3,truck:2,log:3,pad:4}[kind];return{r,v:v*k,kind,w,n,L:COLS+2+w,p:Math.random()*20,i}})}
+const objs=l=>Array.from({length:l.n},(_,i)=>(((l.p+i*l.L/l.n)%l.L)+l.L)%l.L-l.w-1);
+function respawn(){G.f={x:5,r:10,px:5,pr:10,h:0,dir:0}}
+function hop(dx,dy){if(!G||G.st!=='play')return;const f=G.f;if(f.h>0)return;const nr=f.r+dy,nx=f.x+dx;if(nr<0||nr>10||nx<0||nx>COLS-1)return;
+ f.px=f.x;f.pr=f.r;f.x=nx;f.r=nr;f.h=1;f.dir=dx>0?1:dx<0?3:dy>0?2:0;SFX.hop()}
+function die(why){SFX.die();burst(G.f.x*S+S/2,G.f.r*S+S/2,18,['spark'],why==='river'?['#bfe8ff','#fff']:['#ff6b6b','#ffd23f'],160);
+ G.lives--;hud();log('life_lost',{why});if(G.lives<=0){G.st='over';log('mission_failed');show('#over')}else respawn()}
+function update(dt){G.t+=dt;G.L.forEach(l=>l.p+=l.v*dt);const f=G.f;
+ PA=PA.filter(p=>(p.l-=dt)>0);PA.forEach(p=>{p.x+=p.vx*dt;p.y+=p.vy*dt;p.vy+=(p.t==='spark'?100:320)*dt;p.r+=dt*5});
+ if(G.st==='win'&&Math.random()<dt*3){const x=60+Math.random()*(cv.width-120),y=40+Math.random()*200;burst(x,y,30,['spark','star','pad'],['#ffd23f','#ff5d8f','#7ed957','#6fd3ff','#fff'],200);SFX.pop()}
+ if(G.st==='cut'){G.cut+=dt;G.gate=Math.min(1,G.cut/.7);if(G.cut>1.7){G.stage++;if(G.stage>=GATES)return victory();lanes();respawn();G.gate=0;G.cut=0;G.st='play';hud();log('stage_start')}return}
+ if(G.st!=='play')return;
+ if(f.h>0)f.h=Math.max(0,f.h-dt/.11);if(f.h>0)return;
+ if(f.r===0){f.x=5;G.st='term';G.tries=0;openTerm();return}
+ const l=G.L.find(l=>l.r===f.r);if(!l)return;const xs=objs(l),cx=f.x+.5;
+ if(f.r>=6&&f.r<=9){if(xs.some(x=>f.x+.2<x+l.w&&f.x+.8>x))die('car')}
+ else{if(xs.some(x=>cx>x+.05&&cx<x+l.w-.05)){f.x+=l.v*dt;if(f.x<-.4||f.x>COLS-.6)die('river')}else die('river')}}
+function victory(){G.st='win';G.stage=GATES-1;hud();SFX.win();burst(cv.width/2,200,80,['star','pad','spark'],['#ffd23f','#ffe98a','#fff'],320);
+ log('victory');$('#wmsg').textContent=(who.name||'Science Hopper')+' cleared all '+GATES+' gates!';show('#win')}
+function hud(){$('#hn').textContent=who.name||'Teacher preview';
+ $('#hs').innerHTML=Array.from({length:GATES},(_,i)=>`<span class="${''}">${IC.star.replace('<svg','<svg class="'+(i<G.stage||G.st==='win'?'on':'')+'"')}</span>`).join('');
+ $('#hl').innerHTML=Array.from({length:MAXL},(_,i)=>i<G.lives?IC.heart:IC.hurt).join('')}
+
+// ---------- terminal ----------
+function openTerm(){const q=G.qs[G.stage],b=$('#qin');$('#qtext').textContent=q.q;$('#fb').innerHTML='';show('#term');
+ if(q.t==='w')b.innerHTML='<textarea id="ta" placeholder="Type your scientific explanation..."></textarea><button class="btn" id="sub">Unlock gate</button>';
+ else{const O=q.t==='mc'?q.o:['True','False'];b.innerHTML=O.map((t,i)=>`<button class="opt" data-v="${q.t==='mc'?i:t==='True'}">${t}</button>`).join('')}
+ b.querySelectorAll('.opt').forEach(x=>x.onclick=()=>answer(x.dataset.v,x.textContent));const s=$('#sub');if(s)s.onclick=()=>answer($('#ta').value)}
+function answer(v,label){const q=G.qs[G.stage],r=check(q,v);G.tries++;log('answer',{q:q.q.slice(0,80),answer:(label||v).slice(0,300),correct:r.ok,attempt:G.tries});
+ if(r.ok){const rest=G.lives<MAXL;if(rest){G.lives++;hud()}G.sup=true;SFX.win();
+  $('#fb').innerHTML='<h2 style="color:#37e6c3">Correct! Gate unlocked'+(rest?' and 1 life restored':'')+'</h2>';
+  setTimeout(()=>{show();G.st='cut';G.cut=0;burst(5*S+S/2,S/2,70,['star','conf','spark'],['#ffd23f','#ff5d8f','#7ed957','#6fd3ff'],300)},900);return}
+ SFX.bad();const bx=$('#tbox');bx.classList.remove('shake');void bx.offsetWidth;bx.classList.add('shake');
+ let h='<h2 style="color:#ff7a90">Not quite yet</h2>';
+ if(q.t==='w'){h+=r.hit.map(x=>`<span class="chip ok">${x}</span>`).join('')+r.miss.map(x=>`<span class="chip miss">Missing: ${x}</span>`).join('')+
+  `<div class="cmp"><div><b>Your answer</b>${(v||'(empty)').replace(/</g,'&lt;')}</div><div><b>Model answer</b>${q.m}</div></div><button class="btn alt" id="rt">Revise and retry</button>`}
+ else h+=`<p>${q.t==='tf'?q.m:'Look again at each choice, then retry.'}</p><button class="btn alt" id="rt">Try again</button>`;
+ $('#fb').innerHTML=h;$('#rt').onclick=()=>{$('#fb').innerHTML='';const t=$('#ta');t&&t.focus()}}
+
+// ---------- drawing ----------
+function rr(x,y,w,h,r,c){ctx.fillStyle=c;ctx.beginPath();ctx.roundRect(x,y,w,h,r);ctx.fill()}
+function star(x,y,R,r,c){ctx.fillStyle=c;ctx.beginPath();for(let i=0;i<10;i++){const a=i*Math.PI/5-Math.PI/2,d=i%2?r:R;ctx.lineTo(x+Math.cos(a)*d,y+Math.sin(a)*d)}ctx.fill()}
+function pad(x,y,rx,ry,c,flower){ctx.save();ctx.translate(x,y);ctx.scale(1,ry/rx);ctx.fillStyle=c;ctx.beginPath();ctx.moveTo(0,0);ctx.arc(0,0,rx,.3,6.28-.3);ctx.fill();ctx.restore();
+ if(flower){ctx.fillStyle='#ff9ec4';ctx.beginPath();ctx.arc(x-rx*.2,y-2,6,0,6.3);ctx.fill();ctx.fillStyle='#ffe14d';ctx.beginPath();ctx.arc(x-rx*.2,y-2,2.500,0,6.3);ctx.fill()}}
+function frog(x,y,dir){ctx.save();ctx.translate(x,y);ctx.rotate(dir*Math.PI/2);const s=Math.sin(G.t*10);
+ if(G.sup){ctx.shadowColor='#ffe14d';ctx.shadowBlur=16+4*s;ctx.fillStyle='#e8334f';ctx.beginPath();ctx.moveTo(-8,5);ctx.lineTo(8,5);ctx.lineTo(13+s*3,23);ctx.lineTo(-13-s*3,23);ctx.fill()}
+ ctx.fillStyle='#3fc257';ctx.strokeStyle='#17642b';ctx.lineWidth=2;
+ [[-14,9,7,10],[14,9,7,10],[-12,-10,5,7],[12,-10,5,7]].forEach(([a,b,c,d])=>{ctx.beginPath();ctx.ellipse(a,b,c,d,0,0,6.3);ctx.fill();ctx.stroke()});
+ ctx.beginPath();ctx.ellipse(0,0,13,16,0,0,6.3);ctx.fill();ctx.stroke();ctx.shadowBlur=0;
+ ctx.fillStyle='#b8f08a';ctx.beginPath();ctx.ellipse(0,4,7,9,0,0,6.3);ctx.fill();
+ [-7,7].forEach(e=>{ctx.fillStyle='#fff';ctx.beginPath();ctx.arc(e,-13,5.500,0,6.3);ctx.fill();ctx.stroke();ctx.fillStyle='#111';ctx.beginPath();ctx.arc(e,-14,2.500,0,6.3);ctx.fill()});
+ ctx.beginPath();ctx.arc(0,-6,5,.2,2.9);ctx.stroke();if(G.sup){star(0,6,5,2.200,'#ffd23f');ctx.fillStyle='#e8334f';ctx.fillRect(-11,-12,22,4);}ctx.restore()}
+function vehicle(l,x){const y=l.r*S,px=x*S,c=['#ff5d5d','#ffb703','#6c8cff','#c77dff'][(l.i+Math.round(x))&3];
+ if(l.kind==='car'){rr(px+2,y+11,l.w*S-4,S-22,9,c);rr(px+(l.v>0?l.w*S*.55:l.w*S*.12),y+14,l.w*S*.3,S-28,4,'#cdeaff')}
+ else{const cab=S*.8,tl=l.v>0;rr(px+2,y+8,l.w*S-4,S-16,6,'#f1f5f9');rr(tl?px+l.w*S-cab-2:px+2,y+8,cab,S-16,8,c);rr(tl?px+l.w*S-cab*.6:px+cab*.1+2,y+13,cab*.45,S-26,3,'#cdeaff')}
+ ctx.fillStyle='#222';[.2,.75].forEach(k=>{[y+8,y+S-8].forEach(wy=>{ctx.beginPath();ctx.arc(px+l.w*S*k,wy,5,0,6.3);ctx.fill()})})}
+function draw(){const T=TH[cfg.th],f=G.f;ctx.clearRect(0,0,cv.width,cv.height);
+ for(let r=0;r<ROWS;r++){const y=r*S,riv=r>=1&&r<=4,rd=r>=6&&r<=9;ctx.fillStyle=riv?T.w:rd?T.rd:(r%2?T.g2:T.g);ctx.fillRect(0,y,cv.width,S);
+  if(riv){ctx.strokeStyle=T.w2;ctx.lineWidth=2;for(let i=0;i<7;i++){const x=((i*91+G.t*30*(r%2?1:-1))%cv.width+cv.width)%cv.width;ctx.beginPath();ctx.moveTo(x,y+14+(i%3)*10);ctx.quadraticCurveTo(x+8,y+9+(i%3)*10,x+16,y+14+(i%3)*10);ctx.stroke()}}
+  if(rd&&r<9){ctx.strokeStyle=T.ln;ctx.lineWidth=3;ctx.setLineDash([18,16]);ctx.beginPath();ctx.moveTo(0,y+S);ctx.lineTo(cv.width,y+S);ctx.stroke();ctx.setLineDash([])}
+  if(!riv&&!rd&&r!==0){ctx.fillStyle='#ffffff22';for(let i=0;i<9;i++){ctx.beginPath();ctx.arc((i*67+r*23)%cv.width,y+10+(i%4)*10,2.500,0,6.3);ctx.fill()}}}
+ G.L.forEach(l=>objs(l).forEach((x,i)=>{const y=l.r*S,px=x*S;
+  if(l.kind==='log'){rr(px,y+8,l.w*S,S-16,12,'#9b6a3a');ctx.fillStyle='#7a4f27';for(let k=1;k<4;k++)ctx.fillRect(px+k*l.w*S/4,y+12,3,S-24);ctx.fillStyle='#c48b52';ctx.beginPath();ctx.ellipse(px+10,y+S/2,6,12,0,0,6.3);ctx.fill()}
+  else if(l.kind==='pad')pad(px+l.w*S/2,y+S/2,l.w*S/2,19,'#3ea34b',i%2)
+  else vehicle(l,x)}));
+ // gate
+ const g=G.gate;ctx.save();rr(3.7*S,0,3.6*S,S,10,'#8b95a5');const gr=ctx.createRadialGradient(5.5*S,S/2,2,5.5*S,S/2,S*(.6+g*1.2));gr.addColorStop(0,g?'#fff':'#7a52ff');gr.addColorStop(1,g?'#37e6c300':'#2a1a6e');
+ ctx.fillStyle=gr;ctx.beginPath();ctx.roundRect(4.5*S,4,2*S,S-4,[S/2,S/2,0,0]);ctx.fill();
+ ctx.fillStyle='#5a6475';ctx.fillRect(3.7*S,0,S*.5,S);ctx.fillRect(6.8*S,0,S*.5,S);
+ if(g<.5){ctx.fillStyle='#ffd23f';ctx.strokeStyle='#16324a';ctx.lineWidth=2.500;ctx.beginPath();ctx.roundRect(5.5*S-9,S/2-2,18,14,3);ctx.fill();ctx.stroke();ctx.beginPath();ctx.arc(5.5*S,S/2-2,6,Math.PI,0);ctx.stroke()}ctx.restore();
+ // frog
+ let fx=f.x+(f.px-f.x)*f.h,fy=f.r+(f.pr-f.r)*f.h;let sc=1;if(G.st==='cut'&&G.cut>.7){sc=Math.max(.05,1-(G.cut-.7)/1);fx=5;fy=.2}
+ if(G.st!=='over'){ctx.save();ctx.translate(0,-Math.sin((1-f.h)*Math.PI)*0);ctx.restore();const lift=f.h>0?Math.sin((1-f.h)*Math.PI)*8:0;
+  ctx.save();ctx.translate(fx*S+S/2,fy*S+S/2-lift);ctx.scale(sc,sc);frog(0,0,f.dir);ctx.restore()}
+ PA.forEach(p=>{ctx.save();ctx.globalAlpha=Math.min(1,p.l);ctx.translate(p.x,p.y);ctx.rotate(p.r);
+  if(p.t==='star')star(0,0,9,4,p.c);else if(p.t==='conf'){ctx.fillStyle=p.c;ctx.fillRect(-4,-2,8,4)}else if(p.t==='pad')pad(0,0,9,7,'#ffd23f',0);else{ctx.fillStyle=p.c;ctx.beginPath();ctx.arc(0,0,3.500,0,6.3);ctx.fill()}ctx.restore()});
+ if(T.dk){ctx.fillStyle=`rgba(10,10,50,${T.dk})`;ctx.fillRect(0,0,cv.width,cv.height)}}
+function burst(x,y,n,types,cols,sp){for(let i=0;i<n;i++){const a=Math.random()*6.283,s=sp*(.3+Math.random());PA.push({x,y,vx:Math.cos(a)*s,vy:Math.sin(a)*s-60,l:1+Math.random()*.9,c:cols[i%cols.length],t:types[i%types.length],r:Math.random()*6})}}
+function loop(t){const dt=Math.min(.05,(t-last)/1000||0);last=t;if(G){update(dt);draw()}requestAnimationFrame(loop)}
+
+// ---------- input ----------
+addEventListener('keydown',e=>{const m={ArrowUp:[0,-1],w:[0,-1],ArrowDown:[0,1],s:[0,1],ArrowLeft:[-1,0],a:[-1,0],ArrowRight:[1,0],d:[1,0]}[e.key.length>1?e.key:e.key.toLowerCase()];
+ if(m&&G&&G.st==='play'){e.preventDefault();hop(...m)}});
+let sw=null;cv.addEventListener('pointerdown',e=>{sw=[e.clientX,e.clientY]});
+cv.addEventListener('pointerup',e=>{if(!sw)return;const dx=e.clientX-sw[0],dy=e.clientY-sw[1];sw=null;
+ if(Math.max(Math.abs(dx),Math.abs(dy))<20)return hop(0,-1);Math.abs(dx)>Math.abs(dy)?hop(Math.sign(dx),0):hop(0,Math.sign(dy))});
+cv.addEventListener('touchmove',e=>e.preventDefault(),{passive:false});
+
+// ---------- portal / student links ----------
+$('#go').onclick=()=>newGame();$('#again').onclick=()=>newGame();$('#again2').onclick=()=>newGame();
+$('#prac').onclick=()=>{who={name:$('#pn').value.trim(),code:$('#pc').value.trim()};cfg={th:$('#pth').value,sp:$('#psp').value};newGame()};
+$('#gen').onclick=()=>{const n=$('#pn').value.trim();if($('#pp').value!==CFG.PIN)return $('#pm').textContent='Wrong PIN.';if(!n)return $('#pm').textContent='Enter a student name.';
+ const c=$('#pc').value.trim(),t=$('#pth').value,s=$('#psp').value,u=new URL(location.href.split('?')[0]);
+ u.search=new URLSearchParams({student:n,code:c,th:t,sp:s,sig:sign(n,c,t,s)});$('#lk').value=u.href;$('#out').style.display='block';$('#pm').textContent='Link made with this theme and speed locked in.'};
+$('#cp').onclick=()=>{$('#lk').select();(navigator.clipboard?navigator.clipboard.writeText($('#lk').value):Promise.resolve(document.execCommand('copy'))).catch(()=>{});$('#pm').textContent='Copied.'};
+$('#mkc').onclick=()=>{$('#cn').textContent=who.name||'Science Hopper';$('#cd').textContent=new Date().toLocaleDateString(undefined,{year:'numeric',month:'long',day:'numeric'});show('#cert');log('certificate_opened')};
+(function boot(){requestAnimationFrame(loop);const P=new URLSearchParams(location.search);
+ $('#pm').textContent=CFG.SHEETS_URL?'Google Sheets logging is on.':'Google Sheets logging is off: set CFG.SHEETS_URL in the file.';
+ if(!P.has('student')){G=null;show('#portal');return}
+ const n=P.get('student'),c=P.get('code')||'',t=P.get('th')||'meadow',s=P.get('sp')||'normal';
+ if(P.get('sig')!==sign(n,c,t,s)||!TH[t]||!SP[s])return show('#bad');
+ who={name:n,code:c};cfg={th:t,sp:s};$('#hello').textContent='Welcome, '+n;show('#intro')})();
+</script></body></html>
