@@ -1,236 +1,246 @@
-<!DOCTYPE html>
-<html lang="en"><head><meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>Frogger: Science Highway</title>
-<!-- GOOGLE SHEETS LOGGING: create a Sheet > Extensions > Apps Script, paste:
-function doPost(e){var d=JSON.parse(e.postData.contents),s=SpreadsheetApp.getActiveSheet();
-if(s.getLastRow()==0)s.appendRow(Object.keys(d));s.appendRow(Object.values(d));return ContentService.createTextOutput('ok')}
-Deploy > Web app > Anyone, then paste the /exec URL into CFG.SHEETS_URL below. -->
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>Frogger: Science Cross Road</title>
 <style>
-:root{--ink:#16324a;--lime:#7ed957;--sun:#ffd23f;--sea:#2d9cdb;--pink:#ff5d8f}
+:root{--bg:#0e2a47;--ink:#e9fff7;--acc:#ffd23f;--ok:#2fd67b;--bad:#ff5d73;--term:#08202b;--glow:#38f2c0;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);color-scheme:dark}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-html,body{margin:0;min-height:100%;font-family:"Trebuchet MS","Segoe UI",system-ui,sans-serif;color:var(--ink);background:linear-gradient(#9fe0ff,#e8fbff)}
-#app,#app *,.ov,.ov *{user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
-textarea,input,select{user-select:text;-webkit-user-select:text;font:inherit}
-#app{display:flex;flex-direction:column;align-items:center;gap:8px;padding:8px}
-#hud{display:flex;justify-content:space-between;align-items:center;width:min(96vw,calc(100dvh - 190px),600px);min-width:300px;background:#fff;border:3px solid var(--ink);border-radius:16px;padding:4px 12px;font-weight:800;box-shadow:0 4px 0 var(--ink)}
-#hud svg{width:24px;height:24px;vertical-align:middle;margin:0 1px}
-.st svg{color:#c9d6e0}.st svg.on{color:var(--sun);filter:drop-shadow(0 0 3px #ffb300)}
-canvas{width:min(96vw,calc(100dvh - 190px),600px);min-width:300px;aspect-ratio:1;border:4px solid var(--ink);border-radius:18px;box-shadow:0 6px 0 var(--ink);touch-action:none;background:#5fd068}
-#dpad{display:grid;grid-template:repeat(2,58px)/repeat(3,58px);gap:6px;justify-content:center}
-#dpad button{background:var(--sun);border:3px solid var(--ink);border-radius:14px;box-shadow:0 4px 0 var(--ink);color:var(--ink);padding:6px;touch-action:none}
-#dpad button:active{transform:translateY(3px);box-shadow:0 1px 0 var(--ink)}
-#dpad svg{width:100%;height:100%}
-@media (hover:hover) and (pointer:fine){#dpad{display:none}}
-.ov{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(15,40,70,.6);padding:12px;overflow:auto;z-index:10}
-.ov.on{display:flex}.ov.clear{background:none;align-items:flex-end;pointer-events:none}.ov.clear .card{pointer-events:auto}
-.card{background:#fff;border:4px solid var(--ink);border-radius:22px;padding:18px;max-width:580px;width:100%;box-shadow:0 8px 0 var(--ink);margin:auto}
-h1,h2{margin:0 0 8px;letter-spacing:-.5px}h1{font-size:28px}
-label{display:block;font-weight:700;margin:8px 0 3px;font-size:14px}
-input,select,textarea{width:100%;padding:9px 10px;border:3px solid var(--ink);border-radius:12px;background:#f6fcff;color:var(--ink)}
-.btn{display:inline-block;background:var(--lime);color:var(--ink);border:3px solid var(--ink);border-radius:14px;padding:10px 18px;font-weight:900;font-size:16px;box-shadow:0 4px 0 var(--ink);cursor:pointer;margin:8px 6px 0 0}
-.btn:active{transform:translateY(3px);box-shadow:0 1px 0 var(--ink)}.btn.alt{background:var(--sun)}.btn.no{background:#e8eef3}
-.row{display:flex;gap:10px}.row>*{flex:1}
-small{opacity:.75}
-#term .card{background:#0d2238;color:#d9f6ff;border-color:#37e6c3;box-shadow:0 8px 0 #0a1626,0 0 24px #37e6c366}
-#term h2{color:#37e6c3;display:flex;align-items:center;gap:8px}#term h2 svg{width:26px}
-#term textarea{background:#091829;color:#e8fbff;border-color:#37e6c3;min-height:96px}
-#qtext{font-size:18px;font-weight:700;margin:6px 0 10px;line-height:1.35}
-.opt{display:block;width:100%;text-align:left;margin:6px 0;background:#143555;color:#e8fbff;border:3px solid #37e6c3;border-radius:12px;padding:10px;font-weight:700;font-size:16px;cursor:pointer}
-.opt:active{background:#1f5a8a}
-.shake{animation:sh .5s}@keyframes sh{20%{transform:translateX(-14px) rotate(-1deg)}40%{transform:translateX(12px)}60%{transform:translateX(-9px)}80%{transform:translateX(6px)}}
-.chip{display:inline-block;padding:3px 10px;border-radius:99px;margin:3px 3px 0 0;font-size:13px;font-weight:800}.chip.ok{background:#37e6c3;color:#052}.chip.miss{background:#ff7a90;color:#400}
-.cmp{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px;font-size:14px}.cmp div{background:#091829;border-radius:10px;padding:8px}.cmp b{display:block;color:#37e6c3;margin-bottom:3px}
-#cert .card{max-width:760px;text-align:center;border-width:8px;border-color:#c99a1c;background:#fffbe8;box-shadow:none}
-#cert h1{font-size:34px;color:#8a5d00}#cert .nm{font-size:38px;font-weight:900;border-bottom:3px solid #c99a1c;display:inline-block;padding:0 24px;margin:10px 0}
-@media print{body *{visibility:hidden}#cert,#cert *{visibility:visible}#cert{position:fixed;inset:0;background:#fff}.np{display:none!important}}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);font-family:"Trebuchet MS","Segoe UI",Arial,sans-serif}
+.game,.game *{user-select:none;-webkit-user-select:none}
+textarea,input{user-select:text;-webkit-user-select:text}
+.game{position:relative;max-width:520px;margin:0 auto;padding:6px 8px;display:flex;flex-direction:column;align-items:center;gap:6px}
+#hud{display:flex;justify-content:space-between;align-items:center;width:100%;font-weight:800;font-size:15px}
+#hud span{display:flex;align-items:center;gap:4px}
+#hearts{display:flex;gap:2px}
+#wrap{position:relative}
+canvas{display:block;border-radius:14px;touch-action:none;box-shadow:0 6px 0 #0006}
+#banner{position:absolute;left:0;right:0;top:38%;text-align:center;font-size:26px;font-weight:900;color:#fff;text-shadow:0 3px 0 #000a;opacity:0;pointer-events:none;transition:opacity .25s}
+#banner.on{opacity:1}
+#pad{display:grid;grid-template-columns:repeat(3,64px);grid-template-rows:repeat(2,56px);gap:6px;justify-content:center}
+#pad button{border:0;border-radius:16px;background:#ffd23f;box-shadow:0 4px 0 #b88a00;display:grid;place-items:center;padding:0}
+#pad button:active{transform:translateY(3px);box-shadow:0 1px 0 #b88a00}
+#pad .u{grid-column:2;grid-row:1}#pad .l{grid-column:1;grid-row:2}#pad .d{grid-column:2;grid-row:2}#pad .r{grid-column:3;grid-row:2}
+.ov{position:fixed;inset:0;background:#000a;display:none;align-items:center;justify-content:center;padding:12px;z-index:5;overflow:auto}
+.ov.on{display:flex}
+.card{background:var(--term);border:3px solid var(--glow);border-radius:18px;padding:16px;width:min(480px,100%);box-shadow:0 0 28px #38f2c055}
+.card h2{margin:0 0 8px;font-size:22px}
+.card label{display:block;font-size:13px;margin:8px 0 3px}
+.card input,.card select,.card textarea{width:100%;padding:9px;border-radius:10px;border:2px solid #38f2c066;background:#0d3040;color:var(--ink);font:inherit}
+.btn{margin-top:12px;width:100%;padding:12px;border:0;border-radius:14px;background:var(--acc);color:#2a2000;font-weight:900;font-size:17px;box-shadow:0 4px 0 #b88a00}
+.opt{display:block;width:100%;margin:6px 0;padding:11px;border-radius:12px;border:2px solid #38f2c066;background:#0d3040;color:var(--ink);font:inherit;text-align:left}
+.opt.sel{border-color:var(--acc);background:#27475a}
+#fb{margin-top:8px;font-size:14px}
+.cmp{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:6px}
+.cmp div{background:#0d3040;border-radius:10px;padding:8px;font-size:13px}
+.chip{display:inline-block;background:var(--bad);color:#fff;border-radius:999px;padding:2px 9px;margin:2px;font-size:12px;font-weight:700}
+.shake{animation:sh .45s}@keyframes sh{20%,60%{transform:translateX(-9px)}40%,80%{transform:translateX(9px)}}
+@media (prefers-reduced-motion:reduce){.shake{animation:none}}
+.tabs{display:flex;gap:4px;margin-top:6px}.tabs button{flex:1;padding:9px 2px;border:0;border-radius:10px 10px 0 0;background:#0d3040;color:var(--ink);font:inherit;font-size:13px;font-weight:700}.tabs button.on{background:var(--glow);color:#06202a}
+.pane{display:none;padding-top:6px}.pane.on{display:block}.pc{width:min(720px,100%);max-height:94vh;overflow:auto}
+table{width:100%;border-collapse:collapse;font-size:12px}td,th{border-bottom:1px solid #38f2c033;padding:4px;text-align:left;vertical-align:top}
+.sm{padding:8px 12px;border:0;border-radius:10px;background:var(--acc);color:#2a2000;font:inherit;font-weight:800;margin:6px 6px 0 0}
+pre{background:#0d3040;padding:8px;border-radius:10px;font-size:11px;white-space:pre-wrap;user-select:text;-webkit-user-select:text}
+.lk{display:flex;gap:6px;align-items:center;margin:5px 0;font-size:12px}.lk input{flex:1;width:auto}.card input[type=checkbox]{width:auto}
+.qi{display:flex;justify-content:space-between;gap:8px;font-size:12px;border-bottom:1px solid #38f2c033;padding:5px 0}
 </style></head><body>
-<div id="app">
- <div id="hud"><span id="hn"></span><span class="st" id="hs"></span><span id="hl"></span></div>
- <canvas id="cv"></canvas>
- <div id="dpad"><span></span><button data-d="0,-1" aria-label="Up"></button><span></span><button data-d="-1,0" aria-label="Left"></button><button data-d="0,1" aria-label="Down"></button><button data-d="1,0" aria-label="Right"></button></div>
+<div class="game">
+ <div id="hud"><span id="hearts"></span><span id="sc"></span><span id="gt"></span></div>
+ <div id="wrap"><canvas id="c"></canvas><div id="banner"></div></div>
+ <div id="pad">
+  <button class="u" aria-label="Up" data-m="0,1"><svg width="34" height="34" viewBox="0 0 24 24"><path d="M12 4l9 12H3z" fill="#3b2c00"/></svg></button>
+  <button class="l" aria-label="Left" data-m="-1,0"><svg width="34" height="34" viewBox="0 0 24 24"><path d="M4 12l12-9v18z" fill="#3b2c00"/></svg></button>
+  <button class="d" aria-label="Down" data-m="0,-1"><svg width="34" height="34" viewBox="0 0 24 24"><path d="M12 20L3 8h18z" fill="#3b2c00"/></svg></button>
+  <button class="r" aria-label="Right" data-m="1,0"><svg width="34" height="34" viewBox="0 0 24 24"><path d="M20 12L8 21V3z" fill="#3b2c00"/></svg></button>
+ </div>
 </div>
 
-<div class="ov" id="portal"><div class="card">
- <h1>Teacher Portal</h1><small>Frogger: Science Highway. Pick settings for practice, or unlock link-making with your PIN.</small>
- <div class="row"><div><label>Theme</label><select id="pth"><option value="meadow">Sunny Meadow</option><option value="sunset">Sunset Swamp</option><option value="night">Night Lab</option></select></div>
- <div><label>Traffic speed</label><select id="psp"><option value="slow">Slow</option><option value="normal" selected>Normal</option><option value="fast">Fast</option></select></div></div>
- <div class="row"><div><label>Student name</label><input id="pn" placeholder="e.g. Amina Hassan"></div><div><label>Class code</label><input id="pc" placeholder="e.g. 7B-SCI"></div></div>
- <label>Teacher PIN</label><input id="pp" type="password" inputmode="numeric" placeholder="PIN">
- <button class="btn alt" id="gen">Make student link</button><button class="btn" id="prac">Practice now</button>
- <div id="out" style="display:none"><label>Signed student link</label><input id="lk" readonly><button class="btn no" id="cp">Copy link</button></div>
- <small id="pm"></small>
+<div class="ov on" id="menu"><div class="card" style="text-align:center">
+ <svg width="76" height="76" viewBox="0 0 76 76" aria-hidden="true"><ellipse cx="38" cy="44" rx="26" ry="22" fill="#35c759"/><ellipse cx="38" cy="50" rx="15" ry="12" fill="#b9f5a0"/><circle cx="26" cy="24" r="10" fill="#fff"/><circle cx="50" cy="24" r="10" fill="#fff"/><circle cx="26" cy="25" r="5" fill="#111"/><circle cx="50" cy="25" r="5" fill="#111"/></svg>
+ <h2>Frogger: Science Cross Road</h2>
+ <p id="who" style="margin:0 0 4px;font-size:16px"></p>
+ <button class="btn" id="go">Start crossing</button>
+ <button class="btn" id="tp" style="background:#38f2c0;box-shadow:0 4px 0 #1b9a7d">Teacher Portal</button>
 </div></div>
 
-<div class="ov" id="intro"><div class="card" style="text-align:center"><h1>Hop, dodge, then crack the Science Gate</h1>
- <h2 id="hello"></h2><p>Cross the highway and the river. Answer the gate question to evolve into Super Science Frog. Arrow keys, WASD, swipe, or the pad.</p><button class="btn" id="go">Start hopping</button></div></div>
-<div class="ov" id="bad"><div class="card"><h1>Link not valid</h1><p>This student link was changed or is incomplete. Ask your teacher for a new link.</p></div></div>
-
-<div class="ov" id="term"><div class="card" id="tbox">
- <h2><svg viewBox="0 0 24 24"><path d="M7 10V7a5 5 0 0 1 10 0v3h1.500a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1h-13a1 1 0 0 1-1-1v-9a1 1 0 0 1 1-1zm2 0h6V7a3 3 0 0 0-6 0z" fill="currentColor"/></svg>Secret Science Terminal</h2>
- <div id="qtext"></div><div id="qin"></div><div id="fb"></div>
+<div class="ov" id="portal"><div class="card pc">
+ <div style="display:flex;justify-content:space-between;align-items:center"><h2 style="margin:0">Teacher Portal</h2><button class="sm" id="pclose">Close</button></div>
+ <div class="tabs" id="tabs"><button class="on" data-p="pq">Questions</button><button data-p="pl">Student Links</button><button data-p="ps">Sync</button><button data-p="pr">Results</button></div>
+ <div class="pane on" id="pq">
+  <div class="cmp"><div><label for="th">Theme</label><select id="th"><option>Day</option><option>Sunset</option><option>Night</option></select></div><div><label for="sp">Speed</label><select id="sp"><option>Slow</option><option>Normal</option><option>Fast</option></select></div></div>
+  <label for="qt">Question type</label>
+  <select id="qt"><option value="complete">Complete the sentence</option><option value="give_reason">Give a reason</option><option value="what_happens">What happens?</option><option value="correct">Correct the mistake</option><option value="mcq">Multiple choice</option></select>
+  <label for="qtext">Question</label><textarea id="qtext" rows="2"></textarea>
+  <div id="qmcq" style="display:none"><label>Choices (at least 2)</label><input id="mc0" placeholder="Choice 1"><input id="mc1" placeholder="Choice 2" style="margin-top:4px"><input id="mc2" placeholder="Choice 3" style="margin-top:4px"><input id="mc3" placeholder="Choice 4" style="margin-top:4px"><label for="mca">Correct choice</label><select id="mca"><option value="0">Choice 1</option><option value="1">Choice 2</option><option value="2">Choice 3</option><option value="3">Choice 4</option></select></div>
+  <div id="qw"><label for="qk">Keywords (separate with |)</label><input id="qk" placeholder="density|expands|lattice"></div>
+  <label for="qm">Model answer</label><textarea id="qm" rows="2"></textarea>
+  <button class="sm" id="qadd">Add question</button><button class="sm" id="qreset">Reset to defaults</button><div id="qs" style="font-size:13px;margin-top:6px"></div>
+  <div id="qlist"></div>
+ </div>
+ <div class="pane" id="pl">
+  <label for="lcode">Class code</label><input id="lcode" value="CLASS1">
+  <label for="lnames">Student names (one per line)</label><textarea id="lnames" rows="5"></textarea>
+  <label><input type="checkbox" id="linc" checked> Put questions, theme, speed and sync URL inside each link</label>
+  <button class="sm" id="lgen">Generate links</button><div id="links"></div>
+ </div>
+ <div class="pane" id="ps">
+  <label for="surl">Google Apps Script Web App URL</label><input id="surl" placeholder="https://script.google.com/macros/s/.../exec">
+  <button class="sm" id="stest">Send Test Row</button><button class="sm" id="scopy">Copy Apps Script</button><div id="ss" style="font-size:13px;margin-top:6px"></div>
+  <pre id="snip">function doPost(e){
+  var s=SpreadsheetApp.getActiveSheet();
+  var d=JSON.parse(e.postData.contents);
+  s.appendRow([d.time,d.name,d.gate,d.question,d.answer,d.correct,d.score,d.duration]);
+  return ContentService.createTextOutput('ok');
+}</pre>
+ </div>
+ <div class="pane" id="pr">
+  <button class="sm" id="rcsv">Download CSV</button><button class="sm" id="rcopy">Copy CSV</button><button class="sm" id="rclr" style="background:var(--bad);color:#fff">Clear</button><div id="rs" style="font-size:13px;margin-top:6px"></div>
+  <div style="overflow:auto"><table id="rt"></table></div>
+ </div>
 </div></div>
 
-<div class="ov" id="over"><div class="card" style="text-align:center"><h1>Mission Failed - Try Again!</h1><p>All 3 lives are gone. The highway wins this round.</p><button class="btn" id="again">Try again</button></div></div>
-<div class="ov clear" id="win"><div class="card" style="text-align:center"><h1>Golden Science Lily Pad Kingdom!</h1><p id="wmsg"></p><button class="btn alt" id="mkc">Open certificate</button><button class="btn" id="again2">Play again</button></div></div>
-
-<div class="ov" id="cert"><div class="card">
- <svg width="90" height="90" viewBox="0 0 24 24"><path d="M12 2l2.900 6 6.600.9-4.800 4.600 1.200 6.500L12 17l-5.900 3 1.200-6.500L2.500 8.900 9.100 8z" fill="#ffd23f" stroke="#c99a1c" stroke-width="1"/></svg>
- <h1>Master Science Hopper Certificate</h1><p>This certificate proudly goes to</p><div class="nm" id="cn"></div>
- <p>for crossing the Science Highway, unlocking every Secret Science Gate, and reaching the Golden Science Lily Pad Kingdom.</p><p id="cd"></p>
- <button class="btn np" onclick="print()">Print</button><button class="btn no np" onclick="show('#win')">Close</button>
+<div class="ov" id="gate"><div class="card" id="term">
+ <h2 style="display:flex;gap:8px;align-items:center"><svg width="30" height="30" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="13" rx="2" fill="none" stroke="#38f2c0" stroke-width="2"/><path d="M8 21h8M12 17v4M7 9l3 2-3 2M12 13h4" fill="none" stroke="#38f2c0" stroke-width="2" stroke-linecap="round"/></svg>Science Gate</h2>
+ <div id="q" style="font-size:17px;font-weight:700"></div>
+ <div id="body"></div>
+ <button class="btn" id="sub">Unlock gate</button>
+ <div id="fb"></div>
 </div></div>
+
+<div class="ov" id="end"><div class="card"><h2 id="et"></h2><p id="ep"></p><button class="btn" id="again">Play again</button></div></div>
 
 <script>
-const CFG={PIN:'1234',SHEETS_URL:''}; // Change PIN. Paste Apps Script /exec URL into SHEETS_URL.
-const $=s=>document.querySelector(s),COLS=11,ROWS=11,S=48,MAXL=3,GATES=3;
-const TH={meadow:{g:'#5fd068',g2:'#4cbd58',rd:'#4a4f5c',ln:'#fff3b0',w:'#2f9fe6',w2:'#7ccdf8',dk:0},
- sunset:{g:'#9bd35f',g2:'#86c24f',rd:'#5d4a72',ln:'#ffd1a1',w:'#6f7cea',w2:'#b2baff',dk:.12},
- night:{g:'#2e9a62',g2:'#26864f',rd:'#262a38',ln:'#9fb4d9',w:'#1e63b4',w2:'#4a92dd',dk:.35}};
-const SP={slow:.75,normal:1,fast:1.3};
-const IC={heart:'<svg viewBox="0 0 24 24"><path d="M12 21C5 15 2 11.500 2 8a5 5 0 0 1 10-1 5 5 0 0 1 10 1c0 3.500-3 7-10 13z" fill="#ff4d6d" stroke="#8a1c33" stroke-width="1.500"/></svg>',
- hurt:'<svg viewBox="0 0 24 24"><path d="M12 21C5 15 2 11.500 2 8a5 5 0 0 1 10-1 5 5 0 0 1 10 1c0 3.500-3 7-10 13z" fill="#d5dfe8" stroke="#8aa0b3" stroke-width="1.500"/></svg>',
- star:'<svg viewBox="0 0 24 24"><path d="M12 2l2.900 6 6.600.9-4.800 4.600 1.200 6.500L12 17l-5.900 3 1.200-6.500L2.500 8.900 9.100 8z" fill="currentColor" stroke="#16324a" stroke-width="1.200"/></svg>',
- arr:'<svg viewBox="0 0 24 24"><path d="M12 5l8 11H4z" fill="currentColor"/></svg>'};
-document.querySelectorAll('#dpad button').forEach(b=>{const[d]=[b.dataset.d.split(',').map(Number)];b.innerHTML=IC.arr;b.firstChild.style.transform=`rotate(${d[1]<0?0:d[1]>0?180:d[0]>0?90:-90}deg)`;b.addEventListener('pointerdown',e=>{e.preventDefault();hop(...d)})});
+const C=document.getElementById('c'),X=C.getContext('2d'),COLS=9,ROWS=10,GATES=3;
+let cs=48;
+const TH={Day:{grass:'#7bd35b',road:'#4b5160',water:'#2fa4e7',bank:'#b79cff',line:'#fff'},Sunset:{grass:'#d1b84a',road:'#5a4458',water:'#e0607e',bank:'#ff9e6b',line:'#ffe2a8'},Night:{grass:'#2f8f5b',road:'#262b3c',water:'#1d5fb0',bank:'#6b5bd1',line:'#9fb4ff'}};
+const $=id=>document.getElementById(id),ld=(k,d)=>{try{const v=JSON.parse(localStorage.getItem(k));return v==null?d:v}catch(e){return d}},sv=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}};
+const TO=[],later=(f,ms)=>TO.push(window.setTimeout(f,ms));
+const DEF=[
+{type:'mcq',q:'Which gas do plants take in to make food by photosynthesis?',ch:['Oxygen','Carbon dioxide','Nitrogen','Helium'],a:1,m:'Carbon dioxide'},
+{type:'complete',q:'Complete: Plants make food using sunlight, water and ____.',kw:['carbon dioxide'],m:'carbon dioxide'},
+{type:'give_reason',q:'Give a reason why ice floats on liquid water.',kw:['density','expand','lattice'],m:'Water expands into a lattice as it freezes, so ice has a lower density than liquid water.'},
+{type:'what_happens',q:'What happens to a green plant kept in the dark for a week?',kw:['photosynth','food','yellow'],m:'It cannot photosynthesise, makes no food, turns yellow and weakens.'},
+{type:'correct',q:'Correct the mistake: The Moon makes its own light.',kw:['reflect','sun'],m:'The Moon does not make light; it reflects sunlight.'},
+{type:'mcq',q:'Which planet is known as the Red Planet?',ch:['Venus','Jupiter','Mars','Mercury'],a:2,m:'Mars'},
+{type:'give_reason',q:'Give a reason why Earth has seasons.',kw:['tilt','orbit','sunlight'],m:'Earth’s axis is tilted as it orbits the Sun, so sunlight hits each hemisphere differently through the year.'}];
+let QS=ld('fsq_q',null);if(!Array.isArray(QS)||!QS.length)QS=DEF.slice();
+let CFG=ld('fsq_cfg',{th:'Day',sp:'Normal'});
+function h53(s){let a=0xdeadbeef,b=0x41c6ce57;for(let i=0;i<s.length;i++){const c=s.charCodeAt(i);a=Math.imul(a^c,2654435761);b=Math.imul(b^c,1597334677)}a=Math.imul(a^(a>>>16),2246822507)^Math.imul(b^(b>>>13),3266489909);b=Math.imul(b^(b>>>16),2246822507)^Math.imul(a^(a>>>13),3266489909);return(4294967296*(2097151&b)+(a>>>0)).toString(36)}
+const sig=(n,c)=>h53(n+'|'+c+'|frogsci1');
+function cp(t){const f=()=>{const x=document.createElement('textarea');x.value=t;document.body.appendChild(x);x.select();try{document.execCommand('copy')}catch(e){}x.remove()};try{navigator.clipboard.writeText(t).catch(f)}catch(e){f()}}
+const esc=t=>String(t).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const S={st:'menu',hearts:3,score:0,round:0,mult:1,mist:0,order:[],q:null,mul:1,sink:0,leap:0,th:TH.Day,name:''};
+let lanes=[],frog={x:4,r:0,maxr:0,dx:4,dr:0,ang:0},parts=[],T=0,pick=null,last=0;
 
-// ---------- helpers ----------
-const H=s=>{let a=0xdeadbeef,b=0x41c6ce57;for(let i=0;i<s.length;i++){const c=s.charCodeAt(i);a=Math.imul(a^c,2654435761);b=Math.imul(b^c,1597334677)}a=Math.imul(a^a>>>16,2246822507)^Math.imul(b^b>>>13,3266489909);b=Math.imul(b^b>>>16,2246822507)^Math.imul(a^a>>>13,3266489909);return(4294967296*(2097151&b)+(a>>>0)).toString(36)};
-const sign=(n,c,t,s)=>H([n,c,t,s,CFG.PIN].join('|'));
-function show(id){document.querySelectorAll('.ov').forEach(o=>o.classList.remove('on'));if(id)$(id).classList.add('on')}
-let AC;function tone(f,d,ty='square',at=0,v=.08){try{AC=AC||new(window.AudioContext||webkitAudioContext)();const t=AC.currentTime+at,o=AC.createOscillator(),g=AC.createGain();o.type=ty;o.frequency.value=f;g.gain.setValueAtTime(v,t);g.gain.exponentialRampToValueAtTime(.001,t+d);o.connect(g);g.connect(AC.destination);o.start(t);o.stop(t+d)}catch(e){}}
-const SFX={hop:()=>tone(520,.08,'sine'),die:()=>{tone(200,.25,'sawtooth');tone(110,.35,'sawtooth',.15)},bad:()=>{[300,250,300].forEach((f,i)=>tone(f,.15,'sine',i*.15,.1))},
- win:()=>[523,659,784,1047,1319].forEach((f,i)=>tone(f,.28,'triangle',i*.1,.13)),pop:()=>tone(900+Math.random()*600,.1,'sine',0,.05)};
-let who={name:'',code:''},cfg={th:'meadow',sp:'normal'},G=null;
-function log(ev,x={}){const d={ts:new Date().toISOString(),student:who.name||'(teacher)',code:who.code,event:ev,stage:G?G.stage+1:0,lives:G?G.lives:0,theme:cfg.th,speed:cfg.sp,...x};
- if(CFG.SHEETS_URL)try{fetch(CFG.SHEETS_URL,{method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(d),keepalive:true}).catch(()=>{})}catch(e){}}
+function size(){cs=Math.max(28,Math.min(56,(innerWidth-20)/COLS,(innerHeight-250)/ROWS));const d=devicePixelRatio||1;C.width=COLS*cs*d;C.height=ROWS*cs*d;C.style.width=COLS*cs+'px';C.style.height=ROWS*cs+'px';X.setTransform(d,0,0,d,0,0)}
+addEventListener('resize',size);
 
-// ---------- questions: w=written (concept groups), mc, tf ----------
-const QB=[
-{t:'w',q:'Explain how photosynthesis helps a plant make its food.',m:'Plants use sunlight, water and carbon dioxide inside the chlorophyll in their leaves to make glucose (sugar) and release oxygen.',
- c:[['sunlight energy','sun','light'],['water','water','h2o'],['carbon dioxide','carbon','co2'],['glucose / sugar','glucose','sugar','food'],['oxygen released','oxygen','o2'],['chlorophyll in leaves','chlorophyll','chloroplast','leaf','leaves']]},
-{t:'mc',q:'Which state of matter has a fixed volume but takes the shape of its container?',o:['Solid','Liquid','Gas','Plasma'],a:1},
-{t:'tf',q:'True or false: sound can travel through empty space (a vacuum).',a:false,m:'False. Sound needs particles to vibrate, so it cannot travel through a vacuum.'},
-{t:'w',q:'Describe the stages of the water cycle.',m:'Heat from the sun causes evaporation, the vapor cools into clouds by condensation, falls as precipitation (rain or snow), and collects in rivers, lakes and oceans.',
- c:[['sun heat energy','sun','heat','energy'],['evaporation','evaporat'],['condensation / clouds','condens','cloud'],['precipitation','precipit','rain','snow'],['collection in rivers/oceans','collect','river','ocean','lake','sea','runoff']]},
-{t:'mc',q:'Which force pulls objects toward the center of the Earth?',o:['Friction','Magnetism','Gravity','Buoyancy'],a:2},
-{t:'w',q:'Why do we have day and night?',m:'The Earth rotates (spins) on its axis about every 24 hours, so the side facing the Sun has day and the side facing away has night.',
- c:[['Earth rotates / spins','rotat','spin'],['on its axis','axis'],['facing the Sun','sun','face','facing','toward'],['24 hours','24','hour','full day'],['side away is dark','away','dark','night']]},
-{t:'tf',q:'True or false: all living things are made of cells.',a:true,m:'True. Cells are the basic units of all living things.'},
-{t:'w',q:'What is a food chain? Show how energy moves through one.',m:'A food chain shows how energy passes from the Sun to producers (plants), then to consumers (animals that eat them), and finally to decomposers.',
- c:[['energy from the Sun','sun','energy'],['producers (plants)','producer','plant','grass'],['consumers eat','consumer','eat','herbivore','predator','animal'],['decomposers','decompos','fungi','bacteria'],['energy flows / passes','flow','pass','transfer','move']]}];
-function check(q,ans){const a=(ans||'').toLowerCase();
- if(q.t==='mc')return{ok:+ans===q.a};if(q.t==='tf')return{ok:(ans==='true')===q.a};
- const hit=[],miss=[];q.c.forEach(c=>(c.slice(1).some(k=>a.includes(k))?hit:miss).push(c[0]));
- return{ok:a.trim().length>8&&hit.length>=Math.ceil(q.c.length*.6),hit,miss}}
+/* audio */
+let AC;function tone(f,d,ty='sine',v=.15,dl=0){try{AC=AC||new (window.AudioContext||window.webkitAudioContext)();const o=AC.createOscillator(),g=AC.createGain(),t=AC.currentTime+dl;o.type=ty;o.frequency.value=f;g.gain.setValueAtTime(v,t);g.gain.exponentialRampToValueAtTime(.001,t+d);o.connect(g);g.connect(AC.destination);o.start(t);o.stop(t+d)}catch(e){}}
+const sfx={hop:()=>tone(520,.08,'square',.06),win:()=>[523,659,784,1047].forEach((f,i)=>tone(f,.25,'triangle',.18,i*.12)),buzz:()=>tone(120,.35,'sawtooth',.15),alarm:()=>[880,660,880,660].forEach((f,i)=>tone(f,.15,'square',.1,i*.16)),die:()=>tone(200,.4,'sawtooth',.12)};
 
-// ---------- game ----------
-const cv=$('#cv'),ctx=cv.getContext('2d');cv.width=COLS*S;cv.height=ROWS*S;let last=0,PA=[];
-function newGame(){const qs=[...QB].sort(()=>Math.random()-.5);
- const w=qs.filter(q=>q.t==='w'),o=qs.filter(q=>q.t!=='w');G={lives:MAXL,stage:0,sup:false,st:'play',t:0,gate:0,cut:0,qs:[w[0],o[0],w[1]],f:null,tries:0};
- lanes();respawn();show();hud();log('game_start')}
-function lanes(){const k=SP[cfg.sp]*(1+.12*G.stage);
- G.L=[[6,1.5,'car'],[7,-2,'truck'],[8,2.2,'car'],[9,-1.7,'truck'],[1,-1.1,'log'],[2,1.4,'pad'],[3,-1.6,'log'],[4,1.2,'pad']].map(([r,v,kind],i)=>{
-  const w={car:1.3,truck:2.2,log:3,pad:1.2}[kind],n={car:3,truck:2,log:3,pad:4}[kind];return{r,v:v*k,kind,w,n,L:COLS+2+w,p:Math.random()*20,i}})}
-const objs=l=>Array.from({length:l.n},(_,i)=>(((l.p+i*l.L/l.n)%l.L)+l.L)%l.L-l.w-1);
-function respawn(){G.f={x:5,r:10,px:5,pr:10,h:0,dir:0}}
-function hop(dx,dy){if(!G||G.st!=='play')return;const f=G.f;if(f.h>0)return;const nr=f.r+dy,nx=f.x+dx;if(nr<0||nr>10||nx<0||nx>COLS-1)return;
- f.px=f.x;f.pr=f.r;f.x=nx;f.r=nr;f.h=1;f.dir=dx>0?1:dx<0?3:dy>0?2:0;SFX.hop()}
-function die(why){SFX.die();burst(G.f.x*S+S/2,G.f.r*S+S/2,18,['spark'],why==='river'?['#bfe8ff','#fff']:['#ff6b6b','#ffd23f'],160);
- G.lives--;hud();log('life_lost',{why});if(G.lives<=0){G.st='over';log('mission_failed');show('#over')}else respawn()}
-function update(dt){G.t+=dt;G.L.forEach(l=>l.p+=l.v*dt);const f=G.f;
- PA=PA.filter(p=>(p.l-=dt)>0);PA.forEach(p=>{p.x+=p.vx*dt;p.y+=p.vy*dt;p.vy+=(p.t==='spark'?100:320)*dt;p.r+=dt*5});
- if(G.st==='win'&&Math.random()<dt*3){const x=60+Math.random()*(cv.width-120),y=40+Math.random()*200;burst(x,y,30,['spark','star','pad'],['#ffd23f','#ff5d8f','#7ed957','#6fd3ff','#fff'],200);SFX.pop()}
- if(G.st==='cut'){G.cut+=dt;G.gate=Math.min(1,G.cut/.7);if(G.cut>1.7){G.stage++;if(G.stage>=GATES)return victory();lanes();respawn();G.gate=0;G.cut=0;G.st='play';hud();log('stage_start')}return}
- if(G.st!=='play')return;
- if(f.h>0)f.h=Math.max(0,f.h-dt/.11);if(f.h>0)return;
- if(f.r===0){f.x=5;G.st='term';G.tries=0;openTerm();return}
- const l=G.L.find(l=>l.r===f.r);if(!l)return;const xs=objs(l),cx=f.x+.5;
- if(f.r>=6&&f.r<=9){if(xs.some(x=>f.x+.2<x+l.w&&f.x+.8>x))die('car')}
- else{if(xs.some(x=>cx>x+.05&&cx<x+l.w-.05)){f.x+=l.v*dt;if(f.x<-.4||f.x>COLS-.6)die('river')}else die('river')}}
-function victory(){G.st='win';G.stage=GATES-1;hud();SFX.win();burst(cv.width/2,200,80,['star','pad','spark'],['#ffd23f','#ffe98a','#fff'],320);
- log('victory');$('#wmsg').textContent=(who.name||'Science Hopper')+' cleared all '+GATES+' gates!';show('#win')}
-function hud(){$('#hn').textContent=who.name||'Teacher preview';
- $('#hs').innerHTML=Array.from({length:GATES},(_,i)=>`<span class="${''}">${IC.star.replace('<svg','<svg class="'+(i<G.stage||G.st==='win'?'on':'')+'"')}</span>`).join('');
- $('#hl').innerHTML=Array.from({length:MAXL},(_,i)=>i<G.lives?IC.heart:IC.hurt).join('')}
+/* world */
+function build(){lanes=[];const m=S.mul*(1+S.round*.2);
+ for(let r=1;r<=4;r++){const dir=r%2?1:-1,tr=r%2===0,w=tr?2.4:1.4,n=tr?2:3;lanes.push({r,dir,sp:(1.1+r*.25)*m,k:'road',w,o:[...Array(n)].map((_,i)=>({x:i*(COLS+6)/n+r,w,c:['#ef476f','#ffd23f','#4cc9f0','#f78c1f'][(r+i)%4]}))})}
+ for(let r=6;r<=8;r++){const dir=r%2?-1:1,log=r!==7,w=log?2.6:1.3,n=log?3:5;lanes.push({r,dir,sp:(.8+(r-5)*.2)*m,k:log?'log':'pad',w,o:[...Array(n)].map((_,i)=>({x:i*(COLS+6)/n+r*.7,w}))})}}
+function reset(){frog={x:4,r:0,maxr:0,dx:4,dr:0,ang:0}}
+function banner(t,ms=1500){const b=document.getElementById('banner');b.textContent=t;b.classList.add('on');later(()=>b.classList.remove('on'),ms)}
+function hud(){const h=document.getElementById('hearts');h.innerHTML=[0,1,2].map(i=>`<svg width="24" height="22" viewBox="0 0 24 22"><path d="M12 21C5 15 1 11 1 6.500 1 3 3.500 1 6.500 1 9 1 11 2.500 12 5 13 2.500 15 1 17.500 1 20.500 1 23 3 23 6.500 23 11 19 15 12 21z" fill="${i<S.hearts?'#ff4d6d':'#3a4a66'}"/></svg>`).join('');document.getElementById('sc').textContent='Score '+S.score+'  x'+S.mult;document.getElementById('gt').textContent='Gate '+Math.min(S.round+1,GATES)+'/'+GATES}
+function burst(x,y,n=60){for(let i=0;i<n;i++){const a=Math.random()*6.28,s=2+Math.random()*5;parts.push({x,y,vx:Math.cos(a)*s,vy:Math.sin(a)*s-3,l:1,c:['#ffd23f','#ff4d6d','#4cc9f0','#7bd35b','#fff'][i%5],s:Math.random()<.5})}}
 
-// ---------- terminal ----------
-function openTerm(){const q=G.qs[G.stage],b=$('#qin');$('#qtext').textContent=q.q;$('#fb').innerHTML='';show('#term');
- if(q.t==='w')b.innerHTML='<textarea id="ta" placeholder="Type your scientific explanation..."></textarea><button class="btn" id="sub">Unlock gate</button>';
- else{const O=q.t==='mc'?q.o:['True','False'];b.innerHTML=O.map((t,i)=>`<button class="opt" data-v="${q.t==='mc'?i:t==='True'}">${t}</button>`).join('')}
- b.querySelectorAll('.opt').forEach(x=>x.onclick=()=>answer(x.dataset.v,x.textContent));const s=$('#sub');if(s)s.onclick=()=>answer($('#ta').value)}
-function answer(v,label){const q=G.qs[G.stage],r=check(q,v);G.tries++;log('answer',{q:q.q.slice(0,80),answer:(label||v).slice(0,300),correct:r.ok,attempt:G.tries});
- if(r.ok){const rest=G.lives<MAXL;if(rest){G.lives++;hud()}G.sup=true;SFX.win();
-  $('#fb').innerHTML='<h2 style="color:#37e6c3">Correct! Gate unlocked'+(rest?' and 1 life restored':'')+'</h2>';
-  setTimeout(()=>{show();G.st='cut';G.cut=0;burst(5*S+S/2,S/2,70,['star','conf','spark'],['#ffd23f','#ff5d8f','#7ed957','#6fd3ff'],300)},900);return}
- SFX.bad();const bx=$('#tbox');bx.classList.remove('shake');void bx.offsetWidth;bx.classList.add('shake');
- let h='<h2 style="color:#ff7a90">Not quite yet</h2>';
- if(q.t==='w'){h+=r.hit.map(x=>`<span class="chip ok">${x}</span>`).join('')+r.miss.map(x=>`<span class="chip miss">Missing: ${x}</span>`).join('')+
-  `<div class="cmp"><div><b>Your answer</b>${(v||'(empty)').replace(/</g,'&lt;')}</div><div><b>Model answer</b>${q.m}</div></div><button class="btn alt" id="rt">Revise and retry</button>`}
- else h+=`<p>${q.t==='tf'?q.m:'Look again at each choice, then retry.'}</p><button class="btn alt" id="rt">Try again</button>`;
- $('#fb').innerHTML=h;$('#rt').onclick=()=>{$('#fb').innerHTML='';const t=$('#ta');t&&t.focus()}}
+function die(why){if(S.st!=='play')return;sfx.die();S.hearts--;burst((frog.x+.5)*cs,(ROWS-.5-frog.r)*cs,18);banner(why,900);hud();if(S.hearts<=0)return finish(false);reset()}
+function move(dx,dy){if(S.st!=='play')return;const river=frog.r>=6&&frog.r<=8;let nx=dx?(river?frog.x+dx:Math.round(frog.x)+dx):(river&&dy?frog.x:Math.round(frog.x));nx=Math.max(0,Math.min(COLS-1,nx));const nr=frog.r+dy;if(nr<0||nr>=ROWS)return;frog.x=nx;frog.r=nr;frog.ang=dx?(dx>0?1.57:-1.57):(dy<0?3.14:0);sfx.hop();if(nr>frog.maxr){frog.maxr=nr;S.score+=10*S.mult;hud()}if(nr===ROWS-1)openGate()}
+addEventListener('keydown',e=>{const t=e.target,ae=document.activeElement;if(/^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName)||(ae&&/^(INPUT|TEXTAREA|SELECT)$/.test(ae.tagName))||t.isContentEditable)return;const k=e.key.toLowerCase(),m={arrowup:[0,1],w:[0,1],arrowdown:[0,-1],s:[0,-1],arrowleft:[-1,0],a:[-1,0],arrowright:[1,0],d:[1,0]}[k];if(m&&S.st==='play'){e.preventDefault();move(...m)}});
+document.querySelectorAll('#pad button').forEach(b=>b.addEventListener('pointerdown',e=>{e.preventDefault();move(...b.dataset.m.split(',').map(Number))}));
+let tx,ty;C.addEventListener('touchstart',e=>{tx=e.touches[0].clientX;ty=e.touches[0].clientY;e.preventDefault()},{passive:false});
+C.addEventListener('touchend',e=>{const t=e.changedTouches[0],dx=t.clientX-tx,dy=t.clientY-ty;if(Math.hypot(dx,dy)<14)return move(0,1);Math.abs(dx)>Math.abs(dy)?move(dx>0?1:-1,0):move(0,dy<0?1:-1)});
 
-// ---------- drawing ----------
-function rr(x,y,w,h,r,c){ctx.fillStyle=c;ctx.beginPath();ctx.roundRect(x,y,w,h,r);ctx.fill()}
-function star(x,y,R,r,c){ctx.fillStyle=c;ctx.beginPath();for(let i=0;i<10;i++){const a=i*Math.PI/5-Math.PI/2,d=i%2?r:R;ctx.lineTo(x+Math.cos(a)*d,y+Math.sin(a)*d)}ctx.fill()}
-function pad(x,y,rx,ry,c,flower){ctx.save();ctx.translate(x,y);ctx.scale(1,ry/rx);ctx.fillStyle=c;ctx.beginPath();ctx.moveTo(0,0);ctx.arc(0,0,rx,.3,6.28-.3);ctx.fill();ctx.restore();
- if(flower){ctx.fillStyle='#ff9ec4';ctx.beginPath();ctx.arc(x-rx*.2,y-2,6,0,6.3);ctx.fill();ctx.fillStyle='#ffe14d';ctx.beginPath();ctx.arc(x-rx*.2,y-2,2.500,0,6.3);ctx.fill()}}
-function frog(x,y,dir){ctx.save();ctx.translate(x,y);ctx.rotate(dir*Math.PI/2);const s=Math.sin(G.t*10);
- if(G.sup){ctx.shadowColor='#ffe14d';ctx.shadowBlur=16+4*s;ctx.fillStyle='#e8334f';ctx.beginPath();ctx.moveTo(-8,5);ctx.lineTo(8,5);ctx.lineTo(13+s*3,23);ctx.lineTo(-13-s*3,23);ctx.fill()}
- ctx.fillStyle='#3fc257';ctx.strokeStyle='#17642b';ctx.lineWidth=2;
- [[-14,9,7,10],[14,9,7,10],[-12,-10,5,7],[12,-10,5,7]].forEach(([a,b,c,d])=>{ctx.beginPath();ctx.ellipse(a,b,c,d,0,0,6.3);ctx.fill();ctx.stroke()});
- ctx.beginPath();ctx.ellipse(0,0,13,16,0,0,6.3);ctx.fill();ctx.stroke();ctx.shadowBlur=0;
- ctx.fillStyle='#b8f08a';ctx.beginPath();ctx.ellipse(0,4,7,9,0,0,6.3);ctx.fill();
- [-7,7].forEach(e=>{ctx.fillStyle='#fff';ctx.beginPath();ctx.arc(e,-13,5.500,0,6.3);ctx.fill();ctx.stroke();ctx.fillStyle='#111';ctx.beginPath();ctx.arc(e,-14,2.500,0,6.3);ctx.fill()});
- ctx.beginPath();ctx.arc(0,-6,5,.2,2.9);ctx.stroke();if(G.sup){star(0,6,5,2.200,'#ffd23f');ctx.fillStyle='#e8334f';ctx.fillRect(-11,-12,22,4);}ctx.restore()}
-function vehicle(l,x){const y=l.r*S,px=x*S,c=['#ff5d5d','#ffb703','#6c8cff','#c77dff'][(l.i+Math.round(x))&3];
- if(l.kind==='car'){rr(px+2,y+11,l.w*S-4,S-22,9,c);rr(px+(l.v>0?l.w*S*.55:l.w*S*.12),y+14,l.w*S*.3,S-28,4,'#cdeaff')}
- else{const cab=S*.8,tl=l.v>0;rr(px+2,y+8,l.w*S-4,S-16,6,'#f1f5f9');rr(tl?px+l.w*S-cab-2:px+2,y+8,cab,S-16,8,c);rr(tl?px+l.w*S-cab*.6:px+cab*.1+2,y+13,cab*.45,S-26,3,'#cdeaff')}
- ctx.fillStyle='#222';[.2,.75].forEach(k=>{[y+8,y+S-8].forEach(wy=>{ctx.beginPath();ctx.arc(px+l.w*S*k,wy,5,0,6.3);ctx.fill()})})}
-function draw(){const T=TH[cfg.th],f=G.f;ctx.clearRect(0,0,cv.width,cv.height);
- for(let r=0;r<ROWS;r++){const y=r*S,riv=r>=1&&r<=4,rd=r>=6&&r<=9;ctx.fillStyle=riv?T.w:rd?T.rd:(r%2?T.g2:T.g);ctx.fillRect(0,y,cv.width,S);
-  if(riv){ctx.strokeStyle=T.w2;ctx.lineWidth=2;for(let i=0;i<7;i++){const x=((i*91+G.t*30*(r%2?1:-1))%cv.width+cv.width)%cv.width;ctx.beginPath();ctx.moveTo(x,y+14+(i%3)*10);ctx.quadraticCurveTo(x+8,y+9+(i%3)*10,x+16,y+14+(i%3)*10);ctx.stroke()}}
-  if(rd&&r<9){ctx.strokeStyle=T.ln;ctx.lineWidth=3;ctx.setLineDash([18,16]);ctx.beginPath();ctx.moveTo(0,y+S);ctx.lineTo(cv.width,y+S);ctx.stroke();ctx.setLineDash([])}
-  if(!riv&&!rd&&r!==0){ctx.fillStyle='#ffffff22';for(let i=0;i<9;i++){ctx.beginPath();ctx.arc((i*67+r*23)%cv.width,y+10+(i%4)*10,2.500,0,6.3);ctx.fill()}}}
- G.L.forEach(l=>objs(l).forEach((x,i)=>{const y=l.r*S,px=x*S;
-  if(l.kind==='log'){rr(px,y+8,l.w*S,S-16,12,'#9b6a3a');ctx.fillStyle='#7a4f27';for(let k=1;k<4;k++)ctx.fillRect(px+k*l.w*S/4,y+12,3,S-24);ctx.fillStyle='#c48b52';ctx.beginPath();ctx.ellipse(px+10,y+S/2,6,12,0,0,6.3);ctx.fill()}
-  else if(l.kind==='pad')pad(px+l.w*S/2,y+S/2,l.w*S/2,19,'#3ea34b',i%2)
-  else vehicle(l,x)}));
- // gate
- const g=G.gate;ctx.save();rr(3.7*S,0,3.6*S,S,10,'#8b95a5');const gr=ctx.createRadialGradient(5.5*S,S/2,2,5.5*S,S/2,S*(.6+g*1.2));gr.addColorStop(0,g?'#fff':'#7a52ff');gr.addColorStop(1,g?'#37e6c300':'#2a1a6e');
- ctx.fillStyle=gr;ctx.beginPath();ctx.roundRect(4.5*S,4,2*S,S-4,[S/2,S/2,0,0]);ctx.fill();
- ctx.fillStyle='#5a6475';ctx.fillRect(3.7*S,0,S*.5,S);ctx.fillRect(6.8*S,0,S*.5,S);
- if(g<.5){ctx.fillStyle='#ffd23f';ctx.strokeStyle='#16324a';ctx.lineWidth=2.500;ctx.beginPath();ctx.roundRect(5.5*S-9,S/2-2,18,14,3);ctx.fill();ctx.stroke();ctx.beginPath();ctx.arc(5.5*S,S/2-2,6,Math.PI,0);ctx.stroke()}ctx.restore();
- // frog
- let fx=f.x+(f.px-f.x)*f.h,fy=f.r+(f.pr-f.r)*f.h;let sc=1;if(G.st==='cut'&&G.cut>.7){sc=Math.max(.05,1-(G.cut-.7)/1);fx=5;fy=.2}
- if(G.st!=='over'){ctx.save();ctx.translate(0,-Math.sin((1-f.h)*Math.PI)*0);ctx.restore();const lift=f.h>0?Math.sin((1-f.h)*Math.PI)*8:0;
-  ctx.save();ctx.translate(fx*S+S/2,fy*S+S/2-lift);ctx.scale(sc,sc);frog(0,0,f.dir);ctx.restore()}
- PA.forEach(p=>{ctx.save();ctx.globalAlpha=Math.min(1,p.l);ctx.translate(p.x,p.y);ctx.rotate(p.r);
-  if(p.t==='star')star(0,0,9,4,p.c);else if(p.t==='conf'){ctx.fillStyle=p.c;ctx.fillRect(-4,-2,8,4)}else if(p.t==='pad')pad(0,0,9,7,'#ffd23f',0);else{ctx.fillStyle=p.c;ctx.beginPath();ctx.arc(0,0,3.500,0,6.3);ctx.fill()}ctx.restore()});
- if(T.dk){ctx.fillStyle=`rgba(10,10,50,${T.dk})`;ctx.fillRect(0,0,cv.width,cv.height)}}
-function burst(x,y,n,types,cols,sp){for(let i=0;i<n;i++){const a=Math.random()*6.283,s=sp*(.3+Math.random());PA.push({x,y,vx:Math.cos(a)*s,vy:Math.sin(a)*s-60,l:1+Math.random()*.9,c:cols[i%cols.length],t:types[i%types.length],r:Math.random()*6})}}
-function loop(t){const dt=Math.min(.05,(t-last)/1000||0);last=t;if(G){update(dt);draw()}requestAnimationFrame(loop)}
+/* gate / quiz */
+function openGate(){S.st='quiz';S.mist=0;S.qt0=Date.now();S.q=S.q||QS[S.order[S.round%S.order.length]];const q=S.q,b=$('body');pick=null;$('q').textContent=q.q;$('fb').innerHTML='';
+ if(q.type==='mcq'){b.innerHTML=q.ch.map(()=>'<button class="opt"></button>').join('');b.querySelectorAll('.opt').forEach((el,i)=>{el.textContent=q.ch[i];el.onclick=()=>{b.querySelectorAll('.opt').forEach(x=>x.classList.remove('sel'));el.classList.add('sel');pick=i}})}
+ else b.innerHTML='<label for="ans">Type your answer</label><textarea id="ans" rows="4"></textarea>';
+ $('gate').classList.add('on')}
+function judge(){const q=S.q;if(q.type==='mcq')return{ok:pick===q.a,ans:pick==null?'(no choice)':q.ch[pick],model:q.ch[q.a]};
+ const a=$('ans').value,l=a.toLowerCase(),miss=q.kw.filter(k=>!l.includes(k.toLowerCase())),need=Math.ceil(q.kw.length*.6);return{ok:q.kw.length-miss.length>=need,ans:a||'(empty)',model:q.m,miss}}
+document.getElementById('sub').onclick=()=>{const r=judge(),q=S.q;sheet({question:q.q,answer:r.ans,correct:r.ok,attempt:r.ok?S.mist+1:S.mist+1});
+ if(r.ok){document.getElementById('gate').classList.remove('on');sfx.win();burst(COLS*cs/2,cs*.8,120);S.score+=100*S.mult;S.mult=Math.min(S.mult+1,5);S.q=null;S.st='leap';S.leap=0;hud();banner('Gate open!',1200);return}
+ sfx.buzz();const t=document.getElementById('term');t.classList.remove('shake');void t.offsetWidth;t.classList.add('shake');S.mist++;let msg;
+ if(S.mist===1){S.hearts--;sfx.alarm();msg='Energy Low! You lost a heart.';hud();if(S.hearts<=0){document.getElementById('gate').classList.remove('on');return finish(false)}}
+ else if(S.mist===2){S.sink=10;msg='Critical Warning! A river log is sinking.'}
+ else{msg='Mission Failed - Try Again!';banner(msg,1500);later(()=>{document.getElementById('gate').classList.remove('on');reset();S.st='play'},1300)}
+ const ch=r.miss&&r.miss.length?'<div>Missing ideas: '+r.miss.map(m=>'<span class="chip">'+m+'</span>').join('')+'</div>':'';
+ document.getElementById('fb').innerHTML='<b style="color:var(--bad)">'+msg+'</b>'+ch+'<div class="cmp"><div><b>Your answer</b><br><span id="ya"></span></div><div><b>Model answer</b><br><span id="ma"></span></div></div>';
+ document.getElementById('ya').textContent=r.ans;document.getElementById('ma').textContent=r.model};
 
-// ---------- input ----------
-addEventListener('keydown',e=>{const m={ArrowUp:[0,-1],w:[0,-1],ArrowDown:[0,1],s:[0,1],ArrowLeft:[-1,0],a:[-1,0],ArrowRight:[1,0],d:[1,0]}[e.key.length>1?e.key:e.key.toLowerCase()];
- if(m&&G&&G.st==='play'){e.preventDefault();hop(...m)}});
-let sw=null;cv.addEventListener('pointerdown',e=>{sw=[e.clientX,e.clientY]});
-cv.addEventListener('pointerup',e=>{if(!sw)return;const dx=e.clientX-sw[0],dy=e.clientY-sw[1];sw=null;
- if(Math.max(Math.abs(dx),Math.abs(dy))<20)return hop(0,-1);Math.abs(dx)>Math.abs(dy)?hop(Math.sign(dx),0):hop(0,Math.sign(dy))});
-cv.addEventListener('touchmove',e=>e.preventDefault(),{passive:false});
+/* logging: stored locally for the Results tab and posted to the Apps Script URL when one is set */
+function post(u,r){try{fetch(u,{method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain'},body:JSON.stringify(r)}).catch(()=>{})}catch(e){}}
+function sheet(d){const rec=Object.assign({time:new Date().toISOString(),name:S.name,gate:S.round+1,score:S.score,duration:Math.round((Date.now()-(S.qt0||S.t0))/1000)},d);const a=ld('fsr',[]);a.push(rec);sv('fsr',a.slice(-500));const u=S.url||ld('fsq_url','');if(u)post(u,rec)}
 
-// ---------- portal / student links ----------
-$('#go').onclick=()=>newGame();$('#again').onclick=()=>newGame();$('#again2').onclick=()=>newGame();
-$('#prac').onclick=()=>{who={name:$('#pn').value.trim(),code:$('#pc').value.trim()};cfg={th:$('#pth').value,sp:$('#psp').value};newGame()};
-$('#gen').onclick=()=>{const n=$('#pn').value.trim();if($('#pp').value!==CFG.PIN)return $('#pm').textContent='Wrong PIN.';if(!n)return $('#pm').textContent='Enter a student name.';
- const c=$('#pc').value.trim(),t=$('#pth').value,s=$('#psp').value,u=new URL(location.href.split('?')[0]);
- u.search=new URLSearchParams({student:n,code:c,th:t,sp:s,sig:sign(n,c,t,s)});$('#lk').value=u.href;$('#out').style.display='block';$('#pm').textContent='Link made with this theme and speed locked in.'};
-$('#cp').onclick=()=>{$('#lk').select();(navigator.clipboard?navigator.clipboard.writeText($('#lk').value):Promise.resolve(document.execCommand('copy'))).catch(()=>{});$('#pm').textContent='Copied.'};
-$('#mkc').onclick=()=>{$('#cn').textContent=who.name||'Science Hopper';$('#cd').textContent=new Date().toLocaleDateString(undefined,{year:'numeric',month:'long',day:'numeric'});show('#cert');log('certificate_opened')};
-(function boot(){requestAnimationFrame(loop);const P=new URLSearchParams(location.search);
- $('#pm').textContent=CFG.SHEETS_URL?'Google Sheets logging is on.':'Google Sheets logging is off: set CFG.SHEETS_URL in the file.';
- if(!P.has('student')){G=null;show('#portal');return}
- const n=P.get('student'),c=P.get('code')||'',t=P.get('th')||'meadow',s=P.get('sp')||'normal';
- if(P.get('sig')!==sign(n,c,t,s)||!TH[t]||!SP[s])return show('#bad');
- who={name:n,code:c};cfg={th:t,sp:s};$('#hello').textContent='Welcome, '+n;show('#intro')})();
+function finish(win){S.st='over';if(win){S.score+=S.hearts*50;hud()}document.getElementById('et').textContent=win?'Final victory!':'Out of energy';document.getElementById('ep').textContent=(win?'The frog reached the Science Pond. ':'The frog needs a rest. ')+'Final score: '+S.score+'.';document.getElementById('end').classList.add('on');if(win)sfx.win();sheet({question:'(game end)',answer:win?'win':'lose',correct:win,attempt:0})}
+
+/* drawing */
+function rr(x,y,w,h,r,f){X.beginPath();X.roundRect(x,y,w,h,r);X.fillStyle=f;X.fill()}
+function drawFrog(px,py,a,sc,sq){X.save();X.translate(px,py);X.rotate(a);X.scale(sc,sc*sq);const g='#35c759';X.fillStyle='#1f8f3d';[[-1,.55],[1,.55],[-1,-.5],[1,-.5]].forEach(([sx,sy])=>{X.beginPath();X.ellipse(sx*cs*.3,sy*cs*.25,cs*.14,cs*.2,sx*.5,0,7);X.fill()});X.fillStyle=g;X.beginPath();X.ellipse(0,0,cs*.3,cs*.36,0,0,7);X.fill();X.fillStyle='#b9f5a0';X.beginPath();X.ellipse(0,cs*.06,cs*.17,cs*.2,0,0,7);X.fill();[-1,1].forEach(s=>{X.fillStyle='#fff';X.beginPath();X.arc(s*cs*.15,-cs*.28,cs*.11,0,7);X.fill();X.fillStyle='#111';X.beginPath();X.arc(s*cs*.15,-cs*.3,cs*.05,0,7);X.fill()});X.restore()}
+function draw(){const th=S.th,w=COLS*cs;const band=(r0,r1,c)=>{X.fillStyle=c;X.fillRect(0,(ROWS-1-r1)*cs,w,(r1-r0+1)*cs)};
+ band(0,0,th.grass);band(1,4,th.road);band(5,5,th.grass);band(6,8,th.water);band(9,9,th.bank);
+ X.strokeStyle=th.line;X.lineWidth=3;X.setLineDash([cs*.4,cs*.4]);for(let r=2;r<=4;r++){X.beginPath();X.moveTo(0,(ROWS-r)*cs);X.lineTo(w,(ROWS-r)*cs);X.stroke()}X.setLineDash([]);
+ X.strokeStyle='#ffffff55';X.lineWidth=2;for(let r=6;r<=8;r++)for(let i=0;i<6;i++){const y=(ROWS-r-.5)*cs+Math.sin(T*2+i+r)*4,x=((i*1.7+T*.4*(r%2?1:-1))%COLS+COLS)%COLS*cs;X.beginPath();X.moveTo(x,y);X.quadraticCurveTo(x+cs*.3,y-5,x+cs*.6,y);X.stroke()}
+ /* gate terminal */
+ const gx=w/2-cs*.7,gy=0;rr(gx,gy+cs*.1,cs*1.4,cs*.85,8,'#0b2230');rr(gx+4,gy+cs*.1+4,cs*1.4-8,cs*.5,5,'#38f2c0');X.fillStyle='#0b2230';X.fillRect(gx+cs*.25,gy+cs*.28,cs*.5,3);X.fillRect(gx+cs*.25,gy+cs*.4,cs*.8,3);
+ lanes.forEach(l=>{const y=(ROWS-1-l.r)*cs;l.o.forEach(o=>{const x=o.x*cs,ow=o.w*cs;
+  if(l.k==='road'){rr(x,y+cs*.14,ow,cs*.72,8,o.c);rr(x+(l.dir>0?ow*.62:ow*.08),y+cs*.22,ow*.3,cs*.3,4,'#d8f3ff');X.fillStyle='#111';[.2,.75].forEach(f=>{X.beginPath();X.arc(x+ow*f,y+cs*.86,cs*.12,0,7);X.fill();X.beginPath();X.arc(x+ow*f,y+cs*.14,cs*.12,0,7);X.fill()})}
+  else if(l.k==='log'){const sk=S.sink>0&&l.r===8;rr(x,y+cs*.18,ow,cs*.64,cs*.3,sk?'#5a4636':'#a8683a');X.strokeStyle='#7a4a24';X.lineWidth=2;for(let i=1;i<ow/cs;i++){X.beginPath();X.arc(x+i*cs,y+cs/2,cs*.12,0,7);X.stroke()}if(sk){X.fillStyle='#ffffff88';X.fillRect(x,y+cs*.5,ow,cs*.3)}}
+  else{X.fillStyle='#2dbb5d';X.beginPath();X.moveTo(x+ow/2,y+cs/2);X.arc(x+ow/2,y+cs/2,cs*.42,.35,6);X.fill();X.fillStyle='#ff8fb8';X.beginPath();X.arc(x+ow*.6,y+cs*.4,cs*.08,0,7);X.fill()}})});
+ let py=(ROWS-.5-frog.dr)*cs,px=(frog.dx+.5)*cs,sc=1,sq=1;if(S.st==='leap'){const p=S.leap;py-=Math.sin(p*3.14)*cs*1.5;sc=1+Math.sin(p*3.14)*.5;px=(frog.x+.5)*cs}
+ const hop=Math.abs(frog.dr-frog.r)+Math.abs(frog.dx-frog.x);sq=1+Math.min(hop,1)*.15;if(S.st!=='over')drawFrog(px,py,frog.ang,sc,sq);
+ parts.forEach(p=>{X.globalAlpha=Math.max(p.l,0);X.fillStyle=p.c;if(p.s){X.beginPath();for(let i=0;i<5;i++){const a=i*1.2566-1.57;X.lineTo(p.x+Math.cos(a)*7,p.y+Math.sin(a)*7);X.lineTo(p.x+Math.cos(a+.6283)*3,p.y+Math.sin(a+.6283)*3)}X.fill()}else X.fillRect(p.x,p.y,5,5)});X.globalAlpha=1}
+
+function loop(ts){const dt=Math.min((ts-last)/1000||0,.05);last=ts;T+=dt;
+ if(S.st==='play'||S.st==='quiz'||S.st==='leap'){lanes.forEach(l=>l.o.forEach(o=>{o.x+=l.dir*l.sp*dt;if(l.dir>0&&o.x>COLS+1)o.x-=COLS+6;if(l.dir<0&&o.x+o.w<-1)o.x+=COLS+6}));if(S.sink>0)S.sink-=dt}
+ if(S.st==='play'){const l=lanes.find(l=>l.r===frog.r);if(l){const a=frog.x+.2,b=frog.x+.8,hit=l.o.find(o=>b>o.x+.08&&a<o.x+o.w-.08);if(l.k==='road'){if(hit)die('Splat!')}else if(!hit||(l.k==='log'&&S.sink>0&&l.r===8))die('Splash!');else{frog.x+=l.dir*l.sp*dt;if(frog.x<-.4||frog.x>COLS-.6)die('Swept away!')}}}
+ if(S.st==='leap'){S.leap+=dt;if(S.leap>=1){S.round++;if(S.round>=GATES)finish(true);else{reset();build();S.st='play';banner('Gate '+(S.round+1)+' - faster!',1200)}}}
+ frog.dx+=(frog.x-frog.dx)*Math.min(1,dt*18);frog.dr+=(frog.r-frog.dr)*Math.min(1,dt*18);if(l2()&&0){}
+ parts.forEach(p=>{p.x+=p.vx;p.y+=p.vy;p.vy+=.2;p.l-=dt*.7});parts=parts.filter(p=>p.l>0);draw();requestAnimationFrame(loop)}
+function l2(){return 0}
+
+function applyCfg(){S.th=TH[CFG.th]||TH.Day;S.mul={Slow:.7,Normal:1,Fast:1.4}[CFG.sp]||1;document.body.style.background=S.th.water}
+function wipe(){TO.splice(0).forEach(clearTimeout);Object.assign(S,{st:'menu',hearts:3,score:0,round:0,mult:1,mist:0,q:null,sink:0,leap:0,t0:Date.now(),qt0:0});parts=[];pick=null;$('body').innerHTML='';$('fb').innerHTML='';$('banner').classList.remove('on');$('gate').classList.remove('on');$('end').classList.remove('on');$('menu').classList.add('on');applyCfg();build();reset();hud()}
+let ST=null;
+function start(){if(ST===false||!QS.length)return;wipe();S.name=ST||'Teacher test';S.order=QS.map((_,i)=>i).sort(()=>Math.random()-.5);$('menu').classList.remove('on');size();S.st='play'}
+$('go').onclick=start;$('again').onclick=wipe;
+
+/* routing: signed student links hide every teacher control */
+const P=new URLSearchParams(location.search);
+if(P.has('student')){const n=P.get('student'),c=P.get('code')||'';ST=sig(n,c)===P.get('sig')?n:false;
+ try{const j=P.get('cfg');if(j){const o=JSON.parse(decodeURIComponent(escape(atob(j))));if(Array.isArray(o.q)&&o.q.length)QS=o.q;if(o.u)S.url=o.u;CFG={th:o.th||'Day',sp:o.sp||'Normal'}}}catch(e){}
+ $('tp').remove();$('portal').remove();
+ if(ST===false){$('who').textContent='This link is not valid. Ask your teacher for a new one.';$('go').remove()}
+ else{$('who').textContent='Student: '+ST;$('go').textContent='Hop In!'}}
+else $('who').textContent='Teacher test mode';
+
+/* teacher portal */
+if($('portal')){
+const tabs=$('tabs');tabs.querySelectorAll('button').forEach(b=>b.onclick=()=>{tabs.querySelectorAll('button').forEach(x=>x.classList.toggle('on',x===b));document.querySelectorAll('.pane').forEach(x=>x.classList.toggle('on',x.id===b.dataset.p));if(b.dataset.p==='pr')renderR()});
+$('tp').onclick=()=>{$('th').value=CFG.th;$('sp').value=CFG.sp;$('surl').value=ld('fsq_url','');renderQ();renderR();$('portal').classList.add('on')};
+$('pclose').onclick=()=>$('portal').classList.remove('on');
+$('th').onchange=$('sp').onchange=()=>{CFG={th:$('th').value,sp:$('sp').value};sv('fsq_cfg',CFG);wipe()};
+function typeUI(){const m=$('qt').value==='mcq';$('qmcq').style.display=m?'block':'none';$('qw').style.display=m?'none':'block'}
+$('qt').onchange=typeUI;
+function renderQ(){const L=$('qlist');L.innerHTML='<b style="font-size:13px">'+QS.length+' questions</b>';QS.forEach((q,i)=>{const d=document.createElement('div');d.className='qi';d.innerHTML='<span><b>'+esc(q.type)+'</b> '+esc(q.q)+'</span>';const b=document.createElement('button');b.className='sm';b.textContent='Delete';b.onclick=()=>{QS.splice(i,1);sv('fsq_q',QS);renderQ()};d.appendChild(b);L.appendChild(d)})}
+$('qadd').onclick=()=>{const t=$('qt').value,q={type:t,q:$('qtext').value.trim(),m:$('qm').value.trim()},m=msg=>$('qs').textContent=msg;if(!q.q)return m('Write the question first.');
+ if(t==='mcq'){q.ch=[0,1,2,3].map(i=>$('mc'+i).value.trim()).filter(Boolean);q.a=+$('mca').value;if(q.ch.length<2||q.a>=q.ch.length)return m('Add at least 2 choices and pick a filled one as correct.');q.m=q.m||q.ch[q.a]}
+ else{q.kw=$('qk').value.split('|').map(x=>x.trim()).filter(Boolean);if(!q.kw.length)return m('Add at least one keyword.');if(!q.m)return m('Add a model answer.')}
+ QS.push(q);sv('fsq_q',QS);['qtext','qk','qm','mc0','mc1','mc2','mc3'].forEach(i=>$(i).value='');m('Question added.');renderQ();wipe()};
+$('qreset').onclick=()=>{QS=DEF.slice();sv('fsq_q',QS);renderQ();$('qs').textContent='Defaults restored.';wipe()};
+$('lgen').onclick=()=>{const code=$('lcode').value.trim()||'CLASS1',names=$('lnames').value.split('\n').map(x=>x.trim()).filter(Boolean),base=location.href.split('?')[0].split('#')[0];let cfg='';
+ if($('linc').checked)cfg='&cfg='+encodeURIComponent(btoa(unescape(encodeURIComponent(JSON.stringify({q:QS,u:ld('fsq_url',''),th:CFG.th,sp:CFG.sp})))));
+ const L=$('links');L.innerHTML='';names.forEach(n=>{const u=base+'?student='+encodeURIComponent(n)+'&code='+encodeURIComponent(code)+'&sig='+sig(n,code)+cfg,d=document.createElement('div');d.className='lk';d.innerHTML='<b></b><input readonly><button class="sm" style="margin:0">Copy</button>';d.querySelector('b').textContent=n;const i=d.querySelector('input');i.value=u;d.querySelector('button').onclick=e=>{cp(u);e.target.textContent='Copied'};L.appendChild(d)})};
+$('surl').onchange=()=>sv('fsq_url',$('surl').value.trim());
+$('stest').onclick=()=>{const u=$('surl').value.trim();sv('fsq_url',u);if(!u)return $('ss').textContent='Paste the web app URL first.';post(u,{time:new Date().toISOString(),name:'TEST',gate:0,question:'Test row',answer:'ok',correct:true,score:0,duration:0});$('ss').textContent='Test row sent. Check your sheet; the browser cannot read the reply.'};
+$('scopy').onclick=()=>{cp($('snip').textContent);$('ss').textContent='Apps Script copied.'};
+const H=['time','name','gate','question','answer','correct','score','duration'];
+function renderR(){const r=ld('fsr',[]);$('rt').innerHTML='<tr>'+H.map(h=>'<th>'+h+'</th>').join('')+'</tr>'+r.slice().reverse().map(x=>'<tr>'+H.map(h=>'<td>'+esc(x[h]??'')+'</td>').join('')+'</tr>').join('')}
+function csv(){return[H.join(',')].concat(ld('fsr',[]).map(r=>H.map(k=>'"'+String(r[k]??'').replace(/"/g,'""')+'"').join(','))).join('\n')}
+$('rcsv').onclick=()=>{try{const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv()],{type:'text/csv'}));a.download='science-cross-road-results.csv';document.body.appendChild(a);a.click();a.remove();$('rs').textContent='Download started. If no file appears, use Copy CSV.'}catch(e){cp(csv());$('rs').textContent='Download blocked here; CSV copied instead.'}};
+$('rcopy').onclick=()=>{cp(csv());$('rs').textContent='CSV copied.'};
+$('rclr').onclick=()=>{sv('fsr',[]);renderR();$('rs').textContent='Results cleared.'};
+typeUI()}
+
+size();wipe();requestAnimationFrame(loop);
 </script></body></html>
